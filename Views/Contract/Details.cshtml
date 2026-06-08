@@ -1,0 +1,83 @@
+@model QuanLyPhongTro.Models.Contract
+@{
+    ViewData["Title"] = "Chi tiết hợp đồng";
+}
+
+<div class="d-flex align-items-center mb-3">
+    <a asp-action="Index" class="btn btn-outline-secondary me-2">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+    <h4 class="mb-0"><i class="fas fa-file-contract me-2 text-info"></i>Chi tiết hợp đồng #@Model.Id</h4>
+</div>
+
+<div class="card" style="max-width:600px;">
+    <div class="card-header d-flex justify-content-between">
+        <span>Thông tin hợp đồng</span>
+        @if (Model.IsActive)
+        {
+            <span class="badge bg-success">✅ Đang hiệu lực</span>
+        }
+        else
+        {
+            <span class="badge bg-secondary">Đã kết thúc</span>
+        }
+    </div>
+    <div class="card-body">
+        <table class="table table-borderless">
+            <tr>
+                <td class="fw-semibold text-muted" width="40%"><i class="fas fa-door-open me-2"></i>Phòng</td>
+                <td><strong>@Model.Room?.Name</strong></td>
+            </tr>
+            <tr>
+                <td class="fw-semibold text-muted"><i class="fas fa-map-marker-alt me-2"></i>Địa chỉ</td>
+                <td>@Model.Room?.Address</td>
+            </tr>
+            <tr>
+                <td class="fw-semibold text-muted"><i class="fas fa-user me-2"></i>Người thuê</td>
+                <td>@Model.User?.FullName (@Model.User?.Username)</td>
+            </tr>
+            <tr>
+                <td class="fw-semibold text-muted"><i class="fas fa-calendar-alt me-2"></i>Ngày bắt đầu</td>
+                <td>@Model.StartDate.ToString("dd/MM/yyyy")</td>
+            </tr>
+            <tr>
+                <td class="fw-semibold text-muted"><i class="fas fa-calendar-check me-2"></i>Ngày kết thúc</td>
+                <td>@Model.EndDate.ToString("dd/MM/yyyy")</td>
+            </tr>
+            <tr>
+                <td class="fw-semibold text-muted"><i class="fas fa-money-bill me-2"></i>Tiền thuê</td>
+                <td class="text-success fw-bold">@Model.MonthlyRent.ToString("N0") VNĐ/tháng</td>
+            </tr>
+            @if (!string.IsNullOrEmpty(Model.Note))
+            {
+                <tr>
+                    <td class="fw-semibold text-muted"><i class="fas fa-sticky-note me-2"></i>Ghi chú</td>
+                    <td>@Model.Note</td>
+                </tr>
+            }
+            <tr>
+                <td class="fw-semibold text-muted"><i class="fas fa-clock me-2"></i>Ngày tạo</td>
+                <td class="text-muted">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+            </tr>
+        </table>
+
+        @if (Model.IsActive)
+        {
+            <form id="terminateForm" method="post" asp-action="Terminate" asp-route-id="@Model.Id" class="mt-3">
+                @Html.AntiForgeryToken()
+                <button type="button" class="btn btn-danger" onclick="
+                    Swal.fire({
+                    title: 'Kết thúc hợp đồng?',
+                    text: 'Phòng sẽ trở về trạng thái trống.',
+                    imageUrl: window._swalConfirmImg, imageWidth: 80, imageHeight: 80,
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    confirmButtonText: 'Kết thúc',
+                    cancelButtonText: 'Hủy'
+                    }).then(r => { if (r.isConfirmed) document.getElementById('terminateForm').submit(); })">
+                    <i class="fas fa-stop me-1"></i> Kết thúc hợp đồng
+                </button>
+            </form>
+        }
+    </div>
+</div>

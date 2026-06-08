@@ -1,0 +1,482 @@
+@model QuanLyPhongTro.Models.ViewModels.DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+@if (!Model.IsUser)
+{
+    <!-- ===================== ADMIN DASHBOARD ===================== -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0"><i class="fas fa-tachometer-alt me-2 text-primary"></i>Dashboard</h4>
+        <small class="text-muted">Tổng quan hệ thống quản lý phòng trọ</small>
+    </div>
+
+    <!-- Thống kê tổng quan - 4 cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card text-center p-3">
+                <div class="text-primary mb-2"><i class="fas fa-door-open fa-2x"></i></div>
+                <h2 class="mb-0 fw-bold text-primary">@Model.TotalRooms</h2>
+                <small class="text-muted">Tổng số phòng</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center p-3">
+                <div class="text-success mb-2"><i class="fas fa-check-circle fa-2x"></i></div>
+                <h2 class="mb-0 fw-bold text-success">@Model.EmptyRooms</h2>
+                <small class="text-muted">Phòng trống</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center p-3">
+                <div class="text-danger mb-2"><i class="fas fa-home fa-2x"></i></div>
+                <h2 class="mb-0 fw-bold text-danger">@Model.OccupiedRooms</h2>
+                <small class="text-muted">Đã có người thuê</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center p-3">
+                <div class="text-info mb-2"><i class="fas fa-file-contract fa-2x"></i></div>
+                <h2 class="mb-0 fw-bold text-info">@Model.ActiveContracts</h2>
+                <small class="text-muted">Hợp đồng hiệu lực</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-5">
+            <div class="card h-100">
+                <div class="card-header"><i class="fas fa-chart-pie me-2"></i> Tỉ lệ phòng</div>
+                <div class="card-body d-flex align-items-center justify-content-center">
+                    @if (Model.TotalRooms > 0)
+                    {
+                        var emptyPct    = (double)Model.EmptyRooms    / Model.TotalRooms * 100;
+                        var occupiedPct = (double)Model.OccupiedRooms / Model.TotalRooms * 100;
+                        <div class="w-100">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span><i class="fas fa-circle text-success me-1"></i>Trống</span>
+                                <span class="fw-bold">@Model.EmptyRooms phòng (@emptyPct.ToString("0")%)</span>
+                            </div>
+                            <div class="progress mb-3" style="height:20px;">
+                                <div class="progress-bar bg-success" style="width:@emptyPct%"></div>
+                            </div>
+                            <div class="d-flex justify-content-between mb-1">
+                                <span><i class="fas fa-circle text-danger me-1"></i>Đã thuê</span>
+                                <span class="fw-bold">@Model.OccupiedRooms phòng (@occupiedPct.ToString("0")%)</span>
+                            </div>
+                            <div class="progress" style="height:20px;">
+                                <div class="progress-bar bg-danger" style="width:@occupiedPct%"></div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">Chưa có phòng nào</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <div class="card h-100">
+                <div class="card-header"><i class="fas fa-bolt me-2"></i> Thao tác nhanh</div>
+                <div class="card-body">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <a asp-controller="Room" asp-action="Index" class="btn btn-outline-primary w-100 py-3">
+                                <i class="fas fa-door-open d-block fa-2x mb-1"></i>Danh sách phòng
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a asp-controller="RentalRequest" asp-action="Index" class="btn btn-outline-warning w-100 py-3">
+                                <i class="fas fa-clipboard-list d-block fa-2x mb-1"></i>Yêu cầu thuê
+                                @if (Model.PendingRequests > 0)
+                                {
+                                    <span class="badge bg-danger">@Model.PendingRequests</span>
+                                }
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a asp-controller="Contract" asp-action="Index" class="btn btn-outline-success w-100 py-3">
+                                <i class="fas fa-file-contract d-block fa-2x mb-1"></i>Hợp đồng
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a asp-controller="Contract" asp-action="CalendarView" class="btn btn-outline-info w-100 py-3">
+                                <i class="fas fa-calendar-alt d-block fa-2x mb-1"></i>Lịch hợp đồng
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 3: Charts -->
+    <div class="row g-3 mt-2">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header"><i class="fas fa-chart-pie me-2 text-primary"></i>Tình trạng phòng</div>
+                <div class="card-body d-flex justify-content-center align-items-center" style="height:240px">
+                    <canvas id="roomStatusChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header"><i class="fas fa-chart-bar me-2 text-warning"></i>Yêu cầu thuê</div>
+                <div class="card-body d-flex justify-content-center align-items-center" style="height:240px">
+                    <canvas id="requestStatusChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header"><i class="fas fa-chart-bar me-2 text-danger"></i>HỢ ĐồNG sắp hết hạn</div>
+                <div class="card-body d-flex justify-content-center align-items-center" style="height:240px">
+                    <canvas id="expiringChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        new Chart(document.getElementById('roomStatusChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Trống', 'Chờ duyệt', 'Đã thuê'],
+                datasets: [{ data: [@Model.EmptyRooms, @Model.WaitingRooms, @Model.OccupiedRooms],
+                    backgroundColor: ['#2eb85c','#f9b115','#e55353'], borderWidth: 2, borderColor: '#fff' }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+        });
+        new Chart(document.getElementById('requestStatusChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Chờ duyệt', 'Đã duyệt', 'Từ chối', 'Đã hủy'],
+                datasets: [{ label: 'Số yêu cầu',
+                    data: [@Model.ReqChoDuyet, @Model.ReqDaDuyet, @Model.ReqTuChoi, @Model.ReqDaHuy],
+                    backgroundColor: ['#f9b115','#2eb85c','#e55353','#6c757d'], borderRadius: 4 }]
+            },
+            options: { responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        });
+        new Chart(document.getElementById('expiringChart'), {
+            type: 'bar',
+            data: {
+                labels: ['≤ 30 ngày', '31–60 ngày', '61–90 ngày'],
+                datasets: [{ label: 'Số hợp đồng',
+                    data: [@Model.ContractsExpiring30, @Model.ContractsExpiring60, @Model.ContractsExpiring90],
+                    backgroundColor: ['#e55353','#f9b115','#39f'], borderRadius: 4 }]
+            },
+            options: { responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        });
+    });
+    </script>
+}
+else
+{
+    <!-- ===================== USER DASHBOARD ===================== -->
+    var contract = Model.UserActiveContract;
+    var requests = Model.UserRecentRequests;
+    var daysLeft  = contract != null ? (contract.EndDate - DateTime.Today).Days : 0;
+    var totalDays = contract != null ? (contract.EndDate - contract.StartDate).Days : 1;
+    if (totalDays <= 0) { totalDays = 1; }
+    var pctLeft   = contract != null ? Math.Max(0, Math.Min(100, (double)daysLeft / totalDays * 100)) : 0;
+    var daysLeftCls = daysLeft <= 30 ? "danger" : daysLeft <= 90 ? "warning" : "success";
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0"><i class="fas fa-tachometer-alt me-2 text-primary"></i>Trang chủ</h4>
+        <small class="text-muted">Xin chào, @User.Identity!.Name!</small>
+    </div>
+
+    <!-- Row 1: summary cards -->
+    <div class="row g-3 mb-4">
+        <!-- Hợp đồng -->
+        <div class="col-6 col-md-3">
+            <div class="card text-center p-3 h-100">
+                @if (contract != null)
+                {
+                    <div class="text-success mb-2"><i class="fas fa-file-contract fa-2x"></i></div>
+                    <h2 class="mb-0 fw-bold text-success">1</h2>
+                    <small class="text-muted">Hợp đồng hiệu lực</small>
+                }
+                else
+                {
+                    <div class="text-secondary mb-2"><i class="fas fa-file-contract fa-2x"></i></div>
+                    <h2 class="mb-0 fw-bold text-secondary">0</h2>
+                    <small class="text-muted">Hợp đồng hiệu lực</small>
+                }
+            </div>
+        </div>
+
+        <!-- Ngày còn lại -->
+        <div class="col-6 col-md-3">
+            <div class="card text-center p-3 h-100">
+                @if (contract != null)
+                {
+                    <div class="text-@daysLeftCls mb-2"><i class="fas fa-calendar-check fa-2x"></i></div>
+                    <h2 class="mb-0 fw-bold text-@daysLeftCls">@daysLeft</h2>
+                    <small class="text-muted">Ngày còn lại</small>
+                }
+                else
+                {
+                    <div class="text-secondary mb-2"><i class="fas fa-calendar-times fa-2x"></i></div>
+                    <h2 class="mb-0 fw-bold text-secondary">—</h2>
+                    <small class="text-muted">Ngày còn lại</small>
+                }
+            </div>
+        </div>
+
+        <!-- Yêu cầu chờ -->
+        <div class="col-6 col-md-3">
+            <div class="card text-center p-3 h-100">
+                <div class="text-warning mb-2"><i class="fas fa-hourglass-half fa-2x"></i></div>
+                <h2 class="mb-0 fw-bold text-warning">@Model.PendingRequests</h2>
+                <small class="text-muted">Yêu cầu chờ duyệt</small>
+            </div>
+        </div>
+
+        <!-- Phòng trống -->
+        <div class="col-6 col-md-3">
+            <div class="card text-center p-3 h-100">
+                <div class="text-info mb-2"><i class="fas fa-door-open fa-2x"></i></div>
+                <h2 class="mb-0 fw-bold text-info">@Model.EmptyRooms</h2>
+                <small class="text-muted">Phòng đang trống</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 2: Charts -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header"><i class="fas fa-chart-pie me-2 text-success"></i>Tiến độ hợp đồng</div>
+                <div class="card-body d-flex justify-content-center align-items-center" style="height:220px">
+                    <canvas id="contractProgressChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header"><i class="fas fa-chart-pie me-2 text-warning"></i>Yêu cầu của tôi</div>
+                <div class="card-body d-flex justify-content-center align-items-center" style="height:220px">
+                    <canvas id="myRequestsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 3: hợp đồng hiện tại + thao tác nhanh -->
+    <div class="row g-3 mb-4">
+        <!-- Chi tiết hợp đồng -->
+        <div class="col-md-7">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-file-contract me-2"></i>Hợp đồng hiện tại</span>
+                    @if (contract != null)
+                    {
+                        <a asp-controller="Contract" asp-action="Details" asp-route-id="@contract.Id"
+                           class="btn btn-sm btn-outline-primary">Chi tiết</a>
+                    }
+                </div>
+                <div class="card-body">
+                    @if (contract != null)
+                    {
+                        <div class="row g-2 mb-3">
+                            <div class="col-sm-6">
+                                <div class="text-muted small">Phòng</div>
+                                <div class="fw-bold">@(contract.Room?.Name ?? "—")</div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="text-muted small">Địa chỉ</div>
+                                <div class="small">@(contract.Room?.Address ?? "—")</div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="text-muted small">Giá thuê</div>
+                                <div class="fw-bold text-primary">@contract.MonthlyRent.ToString("N0") VNĐ/tháng</div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="text-muted small">Tiền cọc</div>
+                                <div class="fw-semibold">@(contract.Deposit.HasValue ? contract.Deposit.Value.ToString("N0") + " VNĐ" : "—")</div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="text-muted small">Bắt đầu</div>
+                                <div>@contract.StartDate.ToString("dd/MM/yyyy")</div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="text-muted small">Kết thúc</div>
+                                <div class="fw-semibold text-@daysLeftCls">@contract.EndDate.ToString("dd/MM/yyyy")</div>
+                            </div>
+                            @if (contract.PaymentDay.HasValue)
+                            {
+                                <div class="col-sm-6">
+                                    <div class="text-muted small">Ngày thanh toán</div>
+                                    <div>Ngày <strong>@contract.PaymentDay</strong> hàng tháng</div>
+                                </div>
+                            }
+                        </div>
+                        <!-- Thanh tiến độ hợp đồng -->
+                        <div class="text-muted small mb-1 d-flex justify-content-between">
+                            <span>Thời hạn hợp đồng</span>
+                            <span class="fw-semibold text-@daysLeftCls">Còn @daysLeft ngày</span>
+                        </div>
+                        <div class="progress" style="height:10px;">
+                            <div class="progress-bar bg-@daysLeftCls" style="width:@pctLeft.ToString("0", System.Globalization.CultureInfo.InvariantCulture)%"></div>
+                        </div>
+                        @if (daysLeft <= 30 && daysLeft >= 0)
+                        {
+                            <div class="alert alert-danger mt-3 mb-0 py-2 small">
+                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                Hợp đồng sắp hết hạn! Vui lòng liên hệ chủ nhà để gia hạn.
+                            </div>
+                        }
+                        else if (daysLeft < 0)
+                        {
+                            <div class="alert alert-secondary mt-3 mb-0 py-2 small">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Hợp đồng đã hết hạn @Math.Abs(daysLeft) ngày trước.
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-file-contract fa-3x mb-3 d-block text-secondary"></i>
+                            <p class="mb-3">Bạn chưa có hợp đồng thuê phòng nào đang hiệu lực.</p>
+                            <a asp-controller="Room" asp-action="SearchPage" class="btn btn-info">
+                                <i class="fas fa-search me-1"></i> Tìm phòng ngay
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Thao tác nhanh -->
+        <div class="col-md-5">
+            <div class="card h-100">
+                <div class="card-header"><i class="fas fa-bolt me-2"></i> Thao tác nhanh</div>
+                <div class="card-body">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <a asp-controller="Room" asp-action="SearchPage" class="btn btn-outline-info w-100 py-3">
+                                <i class="fas fa-search d-block fa-2x mb-1"></i>Tìm phòng
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a asp-controller="RentalRequest" asp-action="Index" class="btn btn-outline-warning w-100 py-3">
+                                <i class="fas fa-clipboard-list d-block fa-2x mb-1"></i>Yêu cầu của tôi
+                                @if (Model.PendingRequests > 0)
+                                {
+                                    <span class="badge bg-danger">@Model.PendingRequests</span>
+                                }
+                            </a>
+                        </div>
+                        @if (contract != null)
+                        {
+                            <div class="col-12">
+                                <a asp-controller="Contract" asp-action="Details" asp-route-id="@contract.Id"
+                                   class="btn btn-outline-success w-100 py-3">
+                                    <i class="fas fa-file-alt d-block fa-2x mb-1"></i>Xem chi tiết hợp đồng
+                                </a>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 3: Lịch sử yêu cầu -->
+    @if (requests.Any())
+    {
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-history me-2"></i>Yêu cầu thuê gần đây</span>
+                <a asp-controller="RentalRequest" asp-action="Index" class="btn btn-sm btn-outline-secondary">Xem tất cả</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Phòng</th>
+                                <th>Ngày gửi</th>
+                                <th>Ngày muốn thuê</th>
+                                <th>Trạng thái</th>
+                                <th>Ghi chú Admin</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var req in requests.Take(5))
+                            {
+                                var (badgeCls, badgeText) = req.Status switch
+                                {
+                                    QuanLyPhongTro.Models.RequestStatus.ChoDuyet => ("warning text-dark", "⏳ Chờ duyệt"),
+                                    QuanLyPhongTro.Models.RequestStatus.DaDuyet  => ("success", "✅ Đã duyệt"),
+                                    QuanLyPhongTro.Models.RequestStatus.TuChoi   => ("danger",  "❌ Từ chối"),
+                                    QuanLyPhongTro.Models.RequestStatus.DaHuy    => ("secondary","🚫 Đã hủy"),
+                                    _ => ("light text-dark", req.Status.ToString())
+                                };
+                                <tr>
+                                    <td class="fw-semibold">@(req.Room?.Name ?? "—")</td>
+                                    <td>@req.CreatedAt.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        @if (req.DesiredStartDate.HasValue)
+                                        {
+                                            @req.DesiredStartDate.Value.ToString("dd/MM/yyyy")
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
+                                    <td><span class="badge bg-@badgeCls">@badgeText</span></td>
+                                    <td class="text-muted small">@(req.AdminNote ?? "—")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+
+    var _daysPassed = contract != null ? (DateTime.Today - contract.StartDate).Days : 0;
+    var _uChoDuyet  = requests.Count(r => r.Status == QuanLyPhongTro.Models.RequestStatus.ChoDuyet);
+    var _uDaDuyet   = requests.Count(r => r.Status == QuanLyPhongTro.Models.RequestStatus.DaDuyet);
+    var _uTuChoi    = requests.Count(r => r.Status == QuanLyPhongTro.Models.RequestStatus.TuChoi);
+    var _uDaHuy     = requests.Count(r => r.Status == QuanLyPhongTro.Models.RequestStatus.DaHuy);
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        new Chart(document.getElementById('contractProgressChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Đã qua', 'Còn lại'],
+                datasets: [{ data: [@_daysPassed, @Math.Max(0, daysLeft)],
+                    backgroundColor: ['#b0c4de','@(daysLeft <= 30 ? "#e55353" : daysLeft <= 90 ? "#f9b115" : "#2eb85c")'],
+                    borderWidth: 2, borderColor: '#fff' }]
+            },
+            options: { responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' },
+                    tooltip: { callbacks: { label: function(ctx){ return ctx.label + ': ' + ctx.parsed + ' ngày'; } } } } }
+        });
+        new Chart(document.getElementById('myRequestsChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Chờ duyệt','Đã duyệt','Từ chối','Đã hủy'],
+                datasets: [{ data: [@_uChoDuyet, @_uDaDuyet, @_uTuChoi, @_uDaHuy],
+                    backgroundColor: ['#f9b115','#2eb85c','#e55353','#6c757d'],
+                    borderWidth: 2, borderColor: '#fff' }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+        });
+    });
+    </script>
+}

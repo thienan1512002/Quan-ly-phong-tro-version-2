@@ -1,0 +1,425 @@
+@{
+    ViewData["Title"] = "Yêu cầu thuê phòng";
+    bool isAdmin = User.IsInRole("Admin");
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0"><i class="fas fa-clipboard-list me-2 text-warning"></i>
+        @(isAdmin ? "Quản lý yêu cầu thuê" : "Yêu cầu thuê của tôi")
+    </h4>
+    @if (!isAdmin)
+    {
+        <a asp-controller="Room" asp-action="SearchPage" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus me-1"></i> Gửi yêu cầu mới
+        </a>
+    }
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div id="requestGrid"></div>
+    </div>
+</div>
+<script>
+    const _isAdmin= @(isAdmin ? "true" : "false");
+    const _token=document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+    // Cấu hình các cột tùy theo role
+    const columns=[];
+    columns.push({
+        caption: "STT", width: 55, alignment: "center", allowSorting: false,
+        cellTemplate: function (container, options) {
+            $(container).text(options.component.pageIndex()*options.component.pageSize()+options.rowIndex+1);
+        }
+    });
+    if (_isAdmin) columns.push({dataField: "userFullName", caption: "Người gửi", width: 140});
+    columns.push({dataField: "roomName", caption: "Tên phòng", width: 130});
+    columns.push({dataField: "roomAddress", caption: "Địa chỉ"});
+    columns.push({
+        dataField: "note", caption: "Ghi chú", width: 160,
+        customizeText: e => e.value||"—"
+    });
+    columns.push({dataField: "createdAt", caption: "Ngày gửi", width: 145});
+    columns.push({
+        dataField: "statusText",
+        caption: "Trạng thái",
+        width: 140,
+        cellTemplate(container, opt) {
+            const map={
+                "Chờ duyệt": ["bg-warning text-dark", "⏳"],
+                "Đã duyệt":  ["bg-success",          "✅"],
+                "Từ chối":   ["bg-danger",           "❌"],
+                "Đã hủy":    ["bg-secondary",        "🚫"]
+            };
+            const [cls, icon]=map[opt.value]??["bg-secondary", ""];
+            let html=`<span class="badge ${cls}">${icon} ${opt.value}</span>`;
+            // Hiện lý do từ chối nếu có
+            if (opt.value==="Từ chối"&&opt.data.adminNote) {
+                html+=`<br><small class="text-muted">Lý do: ${opt.data.adminNote}</small>`;
+            }
+            $(container).html(html);
+        }
+    });
+
+    // Cột thao tác – chỉ Admin
+    if (_isAdmin) {
+        columns.push({
+            caption: "Thao tác",
+            width: 170,
+            alignment: "center",
+            cellTemplate(container, opt) {
+                if (opt.data.statusValue!==0) { // Không phải "Chờ duyệt"
+                    $('<span class="text-muted small">—</span>').appendTo(container);
+                    return;
+                }
+                // Nút Duyệt
+                $('<button class="btn btn-sm btn-success me-1">')
+                    .html('<i class="fas fa-check me-1"></i>Duyệt')
+                    .on('click', () => openApprovePopup(opt.data))
+                    .appendTo(container);
+                // Nút Từ chối
+                $('<button class="btn btn-sm btn-danger">')
+                    .html('<i class="fas fa-times me-1"></i>Từ chối')
+                    .on('click', () => {
+                        Swal.fire({
+                            title: 'Từ chối yêu cầu',
+                            input: 'textarea',
+                            inputLabel: 'Lý do từ chối (không bắt buộc)',
+                            inputPlaceholder: 'Nhập lý do...',
+                            imageUrl: window._swalConfirmImg, imageWidth: 80, imageHeight: 80,
+                            showCancelButton: true,
+                            confirmButtonColor: '#dc3545',
+                            confirmButtonText: 'Từ chối',
+                            cancelButtonText: 'Hủy'
+                        }).then(r => {if (r.isConfirmed) postAction('/RentalRequest/Reject/'+opt.data.id, r.value||'');});
+                    })
+                    .appendTo(container);
+            }
+        });
+    }
+
+    // Cột thao tác – User (tự hủy yêu cầu của mình)
+    if (!_isAdmin) {
+        columns.push({
+            caption: "Thao tác",
+            width: 120,
+            alignment: "center",
+            cellTemplate(container, opt) {
+                if (opt.data.statusValue !== 0) {
+                    $('<span class="text-muted small">—</span>').appendTo(container);
+                    return;
+                }
+                $('<button class="btn btn-sm btn-outline-danger">')
+                    .html('<i class="fas fa-ban me-1"></i>Hủy YC')
+                    .on('click', () => cancelRequest(opt.data.id))
+                    .appendTo(container);
+            }
+        });
+    }
+
+    $(function () {
+        $("#requestGrid").dxDataGrid({
+            dataSource: {
+                load: () => $.getJSON('/RentalRequest/GetAll')
+            },
+            columns,
+            paging: {pageSize: 10},
+            pager: {
+                showPageSizeSelector: true, allowedPageSizes: [5, 10, 20],
+                showInfo: true, infoText: "Trang {0}/{1} ({2} bản ghi)"
+            },
+            searchPanel: {visible: true, placeholder: "Tìm kiếm..."},
+            headerFilter: {visible: true},
+            filterRow: {visible: true},
+            showBorders: true,
+            rowAlternationEnabled: true,
+            wordWrapEnabled: false,
+            noDataText: "Chưa có yêu cầu nào",
+            height: "auto"
+        });
+    });
+
+    // Gửi POST bằng fetch (có antiforgery token)
+    async function postAction(url, adminNote) {
+        const body=new URLSearchParams({__RequestVerificationToken: _token});
+        if (adminNote!==null) body.append('adminNote', adminNote);
+        const res=await fetch(url, {method: 'POST', body});
+        if (res.ok||res.redirected) {
+            window.location.reload();
+        } else {
+            Swal.fire({icon: 'error', title: 'Lỗi', text: 'Có lỗi xảy ra, vui lòng thử lại!'});
+        }
+    }
+
+    async function cancelRequest(id) {
+        const confirmed = await Swal.fire({
+            title: 'Hủy yêu cầu thuê?',
+            text: 'Yêu cầu sẽ bị hủy và không thể khôi phục.',
+            imageUrl: window._swalConfirmImg, imageWidth: 80, imageHeight: 80,
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            confirmButtonText: 'Hủy yêu cầu',
+            cancelButtonText: 'Quay lại'
+        });
+        if (!confirmed.isConfirmed) return;
+        const body = new URLSearchParams({ __RequestVerificationToken: _token });
+        const res  = await fetch('/RentalRequest/Cancel/' + id, { method: 'POST', body });
+        const json = await res.json();
+        if (json.success) {
+            $('#requestGrid').dxDataGrid('instance').getDataSource().reload();
+            Swal.fire({ icon: 'success', title: 'Thành công', text: json.message, timer: 2000, showConfirmButton: false });
+        } else {
+            Swal.fire({ icon: 'error', title: 'Lỗi', text: json.message });
+        }
+    }
+</script>
+@Html.AntiForgeryToken()
+
+<!-- DevExtreme Popup Tạo hợp đồng khi duyệt -->
+<style>
+    .info-group         { background:#f8fafc; border:1px solid #e5e7eb; border-radius:10px; padding:14px 18px; margin-bottom:14px; }
+    .info-group-title   { font-weight:700; font-size:13px; color:#374151; margin-bottom:12px; display:flex; align-items:center; gap:7px; border-bottom:1px solid #e5e7eb; padding-bottom:8px; }
+    .info-grid          { display:grid; grid-template-columns:1fr 1fr; gap:8px 20px; }
+    .info-item          { display:flex; flex-direction:column; gap:2px; }
+    .info-item.span-2   { grid-column:span 2; }
+    .info-label         { font-size:11px; color:#9ca3af; font-weight:500; text-transform:uppercase; letter-spacing:.4px; }
+    .info-value         { font-size:13px; color:#1e293b; font-weight:500; }
+    .info-value.muted   { color:#9ca3af; font-style:italic; }
+    .info-value.money   { color:#16a34a; font-weight:700; }
+</style>
+<div id="approveContractPopup"></div>
+
+<script>
+    let approvePopup    = null;
+    let approveForm     = null;
+    let currentReqData  = null;
+    let _approveInfoDiv = null;
+
+    /* ── Helper: build HTML info section (no inputs) ── */
+    function _buildApproveInfo(d) {
+        d = d || {};
+        const vv = function(v, cls) {
+            return v
+                ? '<span class="info-value' + (cls ? ' ' + cls : '') + '">' + v + '</span>'
+                : '<span class="info-value muted">—</span>';
+        };
+        const ii = function(lbl, v, span, cls) {
+            return '<div class="info-item' + (span ? ' span-2' : '') + '"><span class="info-label">' + lbl + '</span>' + vv(v, cls) + '</div>';
+        };
+        const rentFmt = d.roomPrice
+            ? new Intl.NumberFormat('vi-VN').format(d.roomPrice) + ' VNĐ/tháng'
+            : null;
+        const desiredRange = (d.desiredStartDate && d.desiredEndDate)
+            ? new Date(d.desiredStartDate).toLocaleDateString('vi-VN') + ' → ' + new Date(d.desiredEndDate).toLocaleDateString('vi-VN')
+            : null;
+        return [
+            '<div class="info-group">',
+                '<div class="info-group-title">🏠 Thông tin phòng</div>',
+                '<div class="info-grid">',
+                    ii('Tên phòng',      d.roomName),
+                    '<div class="info-item"><span class="info-label">Giá thuê / tháng</span>' + vv(rentFmt, 'money') + '</div>',
+                    ii('Địa chỉ',        d.roomAddress, true),
+                '</div>',
+            '</div>',
+            '<div class="info-group">',
+                '<div class="info-group-title">👤 Thông tin người thuê</div>',
+                '<div class="info-grid">',
+                    ii('Họ tên',            d.userFullName),
+                    ii('Ngày mong muốn',    desiredRange),
+                    ii('Ghi chú yêu cầu',   d.note, true),
+                '</div>',
+            '</div>'
+        ].join('');
+    }
+
+    function openApprovePopup(rowData) {
+        currentReqData = rowData;
+
+        if (!approvePopup) {
+            approvePopup = $("#approveContractPopup").dxPopup({
+                title: "Duyệt yêu cầu — Tạo hợp đồng",
+                width: 780,
+                height: "auto",
+                dragEnabled: true,
+                hideOnOutsideClick: false,
+                showCloseButton: true,
+                toolbarItems: [
+                    {
+                        widget: "dxButton",
+                        toolbar: "bottom",
+                        location: "after",
+                        options: {
+                            text: "Tạo hợp đồng & Duyệt",
+                            type: "success",
+                            icon: "check",
+                            onClick: saveApproveContract
+                        }
+                    },
+                    {
+                        widget: "dxButton",
+                        toolbar: "bottom",
+                        location: "after",
+                        options: {
+                            text: "Hủy",
+                            type: "normal",
+                            onClick: function () {approvePopup.hide();}
+                        }
+                    }
+                ],
+                contentTemplate: function (container) {
+                    const scrollDiv = $('<div>').css({
+                        overflowY: 'auto',
+                        maxHeight: 'calc(92vh - 130px)',
+                        padding: '14px 18px'
+                    }).appendTo(container);
+
+                    /* Info section — re-rendered on each open */
+                    _approveInfoDiv = $('<div>').appendTo(scrollDiv);
+                    _approveInfoDiv.html(_buildApproveInfo(currentReqData));
+
+                    /* Editable contract section */
+                    const contractSection = $('<div class="info-group">').appendTo(scrollDiv);
+                    $('<div class="info-group-title">').html('📝 Thông tin hợp đồng').appendTo(contractSection);
+                    const formDiv = $('<div>').appendTo(contractSection);
+                    approveForm = formDiv.dxForm({
+                        labelMode: "floating",
+                        colCount: 2,
+                        formData: buildFormData(),
+                        items: [
+                            {
+                                dataField: "StartDate",
+                                label: { text: "Ngày bắt đầu *" },
+                                editorType: "dxDateBox",
+                                editorOptions: { type: "date", displayFormat: "dd/MM/yyyy", pickerType: "calendar", stylingMode: "outlined" },
+                                validationRules: [{ type: "required", message: "Vui lòng chọn ngày bắt đầu." }]
+                            },
+                            {
+                                dataField: "EndDate",
+                                label: { text: "Ngày kết thúc *" },
+                                editorType: "dxDateBox",
+                                editorOptions: { type: "date", displayFormat: "dd/MM/yyyy", pickerType: "calendar", stylingMode: "outlined" },
+                                validationRules: [
+                                    { type: "required", message: "Vui lòng chọn ngày kết thúc." },
+                                    {
+                                        type: "custom",
+                                        message: "Ngày kết thúc phải sau ngày bắt đầu.",
+                                        validationCallback: function (e) {
+                                            const sd = approveForm.getEditor("StartDate").option("value");
+                                            return e.value && sd && new Date(e.value) > new Date(sd);
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                dataField: "Deposit",
+                                label: { text: "Tiền cọ (VNĐ)" },
+                                editorType: "dxNumberBox",
+                                editorOptions: { format: "#,##0", min: 0, stylingMode: "outlined", placeholder: "Không bắt buộc" }
+                            },
+                            {
+                                dataField: "PaymentDay",
+                                label: { text: "Ngày TT hàng tháng" },
+                                editorType: "dxNumberBox",
+                                editorOptions: { min: 1, max: 28, stylingMode: "outlined", placeholder: "1–28" }
+                            },
+                            {
+                                dataField: "ManagementFee",
+                                label: { text: "Phí quản lý (VNĐ)" },
+                                editorType: "dxNumberBox",
+                                editorOptions: { format: "#,##0", min: 0, stylingMode: "outlined", placeholder: "Không bắt buộc" }
+                            },
+                            {
+                                dataField: "ParkingFee",
+                                label: { text: "Phí gửi xe (VNĐ)" },
+                                editorType: "dxNumberBox",
+                                editorOptions: { format: "#,##0", min: 0, stylingMode: "outlined", placeholder: "Không bắt buộc" }
+                            },
+                            {
+                                dataField: "ElectricMeter",
+                                label: { text: "Chỉ số điện đầu kỳ" },
+                                editorType: "dxNumberBox",
+                                editorOptions: { min: 0, stylingMode: "outlined", placeholder: "kWh" }
+                            },
+                            {
+                                dataField: "WaterMeter",
+                                label: { text: "Chỉ số nước đầu kỳ" },
+                                editorType: "dxNumberBox",
+                                editorOptions: { min: 0, stylingMode: "outlined", placeholder: "m³" }
+                            },
+                            {
+                                dataField: "Note",
+                                colSpan: 2,
+                                label: { text: "Ghi chú hợp đồng" },
+                                editorType: "dxTextArea",
+                                editorOptions: { placeholder: "Ghi chú thêm (không bắt buộc)", height: 70, autoResizeEnabled: true, stylingMode: "outlined" }
+                            }
+                        ]
+                    }).dxForm("instance");
+                }
+            }).dxPopup("instance");
+        } else {
+            _approveInfoDiv.html(_buildApproveInfo(rowData));
+            approveForm.option("formData", buildFormData());
+            approveForm.resetValidation();
+        }
+
+        approvePopup.show();
+    }
+
+    function buildFormData() {
+        const d = currentReqData || {};
+        const today = new Date();
+        const inSixMonths = new Date();
+        inSixMonths.setMonth(inSixMonths.getMonth() + 6);
+        const startDate = d.desiredStartDate ? new Date(d.desiredStartDate) : today;
+        const endDate   = d.desiredEndDate   ? new Date(d.desiredEndDate)   : inSixMonths;
+        return {
+            StartDate: startDate, EndDate: endDate,
+            Deposit: null, PaymentDay: null,
+            ManagementFee: null, ParkingFee: null,
+            ElectricMeter: null, WaterMeter: null,
+            Note: ""
+        };
+    }
+
+    function fmtDate(d) {
+        if (!d) return "";
+        const dt=new Date(d);
+        return dt.getFullYear()+"-"+
+            String(dt.getMonth()+1).padStart(2, "0")+"-"+
+            String(dt.getDate()).padStart(2, "0");
+    }
+
+    async function saveApproveContract() {
+        const result=approveForm.validate();
+        if (!result.isValid) return;
+
+        const fd=approveForm.option("formData");
+        const body=new URLSearchParams();
+        body.append("requestId", currentReqData.id);
+        body.append("startDate", fmtDate(fd.StartDate));
+        body.append("endDate", fmtDate(fd.EndDate));
+        body.append("note", fd.Note || "");
+        if (fd.Deposit      != null) body.append("deposit",       fd.Deposit);
+        if (fd.PaymentDay   != null) body.append("paymentDay",    fd.PaymentDay);
+        if (fd.ManagementFee!= null) body.append("managementFee", fd.ManagementFee);
+        if (fd.ParkingFee   != null) body.append("parkingFee",    fd.ParkingFee);
+        if (fd.ElectricMeter!= null) body.append("electricMeter", fd.ElectricMeter);
+        if (fd.WaterMeter   != null) body.append("waterMeter",    fd.WaterMeter);
+        body.append("__RequestVerificationToken", _token);
+
+        try {
+            const res=await fetch("/RentalRequest/ApproveAndCreateContract", {method: "POST", body});
+            const json=await res.json();
+            if (json.success) {
+                approvePopup.hide();
+                $("#requestGrid").dxDataGrid("instance").getDataSource().reload();
+                Swal.fire({icon: "success", title: "Thành công", text: json.message, timer: 2500, showConfirmButton: false});
+            } else {
+                Swal.fire({icon: "error", title: "Lỗi", html: json.message});
+            }
+        } catch (e) {
+            Swal.fire({icon: "error", title: "Lỗi kết nối", text: e.message});
+        }
+    }
+</script>

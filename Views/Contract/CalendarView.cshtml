@@ -1,0 +1,487 @@
+@{
+    ViewData["Title"] = "Lịch thuê phòng";
+}
+
+<style>
+    /* ── Calendar layout ── */
+    .cal-wrap       { overflow-x: auto; overflow-y: auto; max-height: 580px; }
+    .cal-grid       { min-width: 640px; font-size: 13px; }
+
+    /* rows */
+    .cal-hdr-row,
+    .cal-room-row   { display: flex; align-items: stretch; border-bottom: 1px solid #e5e7eb; }
+    .cal-room-row   { min-height: 56px; }
+    .cal-room-row:hover > .cal-room-col { background: #eff6ff; }
+
+    /* sticky room column */
+    .cal-room-col   {
+        width: 190px; min-width: 190px;
+        padding: 8px 12px;
+        background: #f8fafc;
+        border-right: 2px solid #cbd5e1;
+        position: sticky; left: 0; z-index: 10;
+        display: flex; flex-direction: column; justify-content: center;
+        transition: background .15s;
+    }
+    .cal-hdr-row .cal-room-col {
+        font-weight: 700; font-size: 11px; letter-spacing: .6px;
+        color: #64748b; text-transform: uppercase; z-index: 21;
+        background: #f1f5f9;
+    }
+
+    /* days area */
+    .cal-days-area  { flex: 1; display: flex; position: relative; min-width: 0; }
+
+    /* day header cells */
+    .cal-day-hdr    {
+        flex: 1; min-width: 30px;
+        text-align: center; padding: 4px 0;
+        border-right: 1px solid #e2e8f0;
+        font-weight: 700; font-size: 13px; color: #334155;
+        background: #f1f5f9;
+    }
+    .cal-day-hdr .dow   { font-size: 9px; font-weight: 400; color: #94a3b8; display: block; }
+    .cal-day-hdr.today  { background: #eff6ff; color: #1d4ed8; }
+    .cal-day-hdr.today .dow { color: #93c5fd; }
+    .cal-day-hdr.weekend{ color: #b45309; background: #fffbeb; }
+
+    /* background grid cells */
+    .cal-bg-cells   { position: absolute; inset: 0; display: flex; pointer-events: none; z-index: 0; }
+    .cal-bg-cell    { flex: 1; min-width: 30px; border-right: 1px solid #f1f5f9; }
+    .cal-bg-cell.today   { background: rgba(37,99,235,.06); }
+    .cal-bg-cell.weekend { background: rgba(251,191,36,.04); }
+
+    /* contract bars */
+    .cal-bar {
+        position: absolute;
+        top: 7px; height: calc(100% - 14px);
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex; align-items: center;
+        padding: 0 9px;
+        overflow: hidden;
+        z-index: 2;
+        box-shadow: 0 1px 4px rgba(0,0,0,.18);
+        transition: filter .15s, box-shadow .15s, top .1s, height .1s;
+    }
+    .cal-bar:hover  { filter: brightness(1.1); box-shadow: 0 4px 14px rgba(0,0,0,.28); z-index: 5; top: 5px; height: calc(100% - 10px); }
+    .cal-bar .bar-name  { color: #fff; font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cal-bar .bar-dates { color: rgba(255,255,255,.72); font-size: 10px; margin-left: 6px; white-space: nowrap; }
+
+    /* today vertical line */
+    .cal-today-line {
+        position: absolute; top: 0; bottom: 0; width: 2px;
+        background: #ef4444; z-index: 4; pointer-events: none;
+    }
+    .cal-today-line::after {
+        content: '';
+        position: absolute; top: 0; left: -3px;
+        width: 8px; height: 8px;
+        background: #ef4444; border-radius: 50%;
+    }
+
+    /* empty row label */
+    .cal-empty-lbl  {
+        position: absolute; inset: 0;
+        display: flex; align-items: center; padding-left: 14px;
+        color: #cbd5e1; font-size: 11px; font-style: italic;
+        pointer-events: none; z-index: 1;
+    }
+
+    /* room col text */
+    .room-name  { font-weight: 600; font-size: 13px; color: #1e293b; }
+    .room-meta  { font-size: 11px; color: #94a3b8; }
+    .room-price { font-size: 11px; color: #16a34a; font-weight: 500; }
+
+    /* modal sections */
+    .modal-section  { border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; }
+
+    /* info grid */
+    .info-group         { background:#f8fafc; border:1px solid #e5e7eb; border-radius:10px; padding:14px 18px; margin-bottom:14px; }
+    .info-group-title   { font-weight:700; font-size:13px; color:#374151; margin-bottom:12px; display:flex; align-items:center; gap:7px; border-bottom:1px solid #e5e7eb; padding-bottom:8px; }
+    .info-grid          { display:grid; grid-template-columns:1fr 1fr; gap:8px 20px; }
+    .info-grid.cols-1   { grid-template-columns:1fr; }
+    .info-item          { display:flex; flex-direction:column; gap:2px; }
+    .info-item.span-2   { grid-column:span 2; }
+    .info-label         { font-size:11px; color:#9ca3af; font-weight:500; text-transform:uppercase; letter-spacing:.4px; }
+    .info-value         { font-size:13px; color:#1e293b; font-weight:500; }
+    .info-value.muted   { color:#9ca3af; font-style:italic; }
+    .info-value.money   { color:#16a34a; font-weight:700; }
+</style>
+
+<!-- Page header -->
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h4 class="mb-0"><i class="fas fa-calendar-alt me-2 text-primary"></i>Lịch trạng thái thuê phòng</h4>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-3">
+    <div class="col-6 col-md-3">
+        <div class="card text-center py-3">
+            <div class="h3 fw-bold mb-0 text-primary" id="statTotal">—</div>
+            <div class="text-muted small mt-1"><i class="fas fa-door-open me-1"></i>Tổng phòng</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-center py-3">
+            <div class="h3 fw-bold mb-0 text-danger" id="statOccupied">—</div>
+            <div class="text-muted small mt-1"><i class="fas fa-user-check me-1"></i>Đang có người thuê</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-center py-3">
+            <div class="h3 fw-bold mb-0 text-success" id="statAvailable">—</div>
+            <div class="text-muted small mt-1"><i class="fas fa-check-circle me-1"></i>Phòng trống</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-center py-3">
+            <div class="h3 fw-bold mb-0 text-warning" id="statRevenue" style="font-size:1.1rem!important">—</div>
+            <div class="text-muted small mt-1"><i class="fas fa-money-bill me-1"></i>Doanh thu tháng</div>
+        </div>
+    </div>
+</div>
+
+<!-- Toolbar -->
+<div class="card mb-3">
+    <div class="card-body py-2 d-flex flex-wrap gap-2 align-items-center justify-content-between">
+        <!-- Month nav -->
+        <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-sm btn-outline-primary" onclick="prevMonth()"><i class="fas fa-chevron-left"></i></button>
+            <span id="monthLabel" class="fw-bold px-2" style="min-width:140px;text-align:center;font-size:15px">...</span>
+            <button class="btn btn-sm btn-outline-primary" onclick="nextMonth()"><i class="fas fa-chevron-right"></i></button>
+            <button class="btn btn-sm btn-secondary" onclick="goToday()"><i class="fas fa-crosshairs me-1"></i>Hôm nay</button>
+        </div>
+        <!-- Filter + Legend -->
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <div class="d-flex gap-3 small text-muted">
+                <span class="d-flex align-items-center gap-1">
+                    <span style="width:14px;height:10px;background:linear-gradient(135deg,#2563eb,#1d4ed8);border-radius:3px;display:inline-block"></span> Đang thuê
+                </span>
+                <span class="d-flex align-items-center gap-1">
+                    <span style="width:14px;height:10px;background:linear-gradient(135deg,#64748b,#475569);border-radius:3px;display:inline-block"></span> Đã kết thúc
+                </span>
+                <span class="d-flex align-items-center gap-1">
+                    <span style="width:2px;height:14px;background:#ef4444;display:inline-block"></span> Hôm nay
+                </span>
+            </div>
+            <select id="roomFilter" class="form-select form-select-sm" style="width:185px" onchange="applyFilter()">
+                <option value="0">Tất cả phòng</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- Timeline -->
+<div class="card">
+    <div class="card-body p-0" style="overflow:hidden">
+        <div class="cal-wrap">
+            <div id="calendarGrid" class="cal-grid"></div>
+        </div>
+    </div>
+</div>
+
+<!-- DevExtreme Popup container -->
+<div id="contractDetailPopup"></div>
+
+@section Scripts {
+<script>
+    const MONTHS = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6',
+                    'Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
+    const DAYS_VI = ['CN','T2','T3','T4','T5','T6','T7'];
+
+    let cur = { year: new Date().getFullYear(), month: new Date().getMonth() + 1 };
+    let allRooms = [], allContracts = [], curDays = 30;
+
+    function parseDate(s) {
+        var p = s.split('-'); return new Date(+p[0], +p[1]-1, +p[2]);
+    }
+    function isToday(y, m, d) {
+        var t = new Date(); return t.getFullYear()===y && t.getMonth()+1===m && t.getDate()===d;
+    }
+
+    async function loadData() {
+        document.getElementById('calendarGrid').innerHTML =
+            '<div class="text-center py-5 text-muted"><i class="fas fa-spinner fa-spin fa-2x d-block mb-2"></i>Đang tải...</div>';
+        var res  = await fetch('/Contract/GetCalendarData?year='+cur.year+'&month='+cur.month);
+        var data = await res.json();
+        allRooms     = data.rooms;
+        allContracts = data.contracts;
+        curDays      = data.daysInMonth;
+        populateFilter();
+        updateStats();
+        renderCalendar();
+    }
+
+    function populateFilter() {
+        var sel = document.getElementById('roomFilter');
+        var val = sel.value;
+        sel.innerHTML = '<option value="0">Tất cả phòng</option>';
+        allRooms.forEach(function(r) {
+            var o = document.createElement('option');
+            o.value = r.id; o.textContent = r.name;
+            sel.appendChild(o);
+        });
+        sel.value = val;
+    }
+
+    function applyFilter() { renderCalendar(); }
+
+    function updateStats() {
+        var active = allContracts.filter(function(c){ return c.isActive; });
+        var occ    = new Set(active.map(function(c){ return c.roomId; }));
+        var rev    = active.reduce(function(s,c){ return s + c.monthlyRent; }, 0);
+        document.getElementById('statTotal').textContent     = allRooms.length;
+        document.getElementById('statOccupied').textContent  = occ.size;
+        document.getElementById('statAvailable').textContent = allRooms.length - occ.size;
+        document.getElementById('statRevenue').textContent   = rev.toLocaleString('vi-VN') + ' VND';
+    }
+
+    function renderCalendar() {
+        var selRoom = parseInt(document.getElementById('roomFilter').value) || 0;
+        var rooms   = selRoom ? allRooms.filter(function(r){ return r.id === selRoom; }) : allRooms;
+        var n       = curDays;
+        var todayD  = (cur.year === new Date().getFullYear() && cur.month === new Date().getMonth()+1)
+                        ? new Date().getDate() : -1;
+        var html = '';
+
+        /* ── Header row ── */
+        html += '<div class="cal-hdr-row" style="position:sticky;top:0;z-index:20;">';
+        html += '<div class="cal-room-col">PHONG</div>';
+        html += '<div class="cal-days-area">';
+        for (var d = 1; d <= n; d++) {
+            var dow    = new Date(cur.year, cur.month-1, d).getDay();
+            var cls    = 'cal-day-hdr';
+            if (isToday(cur.year, cur.month, d)) cls += ' today';
+            if (dow===0||dow===6)                cls += ' weekend';
+            html += '<div class="'+cls+'"><span class="dow">'+DAYS_VI[dow]+'</span>'+d+'</div>';
+        }
+        html += '</div></div>';
+
+        if (rooms.length === 0) {
+            html += '<div class="text-center py-5 text-muted">Không có phòng nào</div>';
+        }
+
+        /* ── Room rows ── */
+        rooms.forEach(function(room) {
+            var contracts = allContracts.filter(function(c){ return c.roomId === room.id; });
+            var stCls = room.status === 0 ? 'bg-success' : room.status === 2 ? 'bg-warning text-dark' : 'bg-danger';
+            var stTxt = room.status === 0 ? 'Trống' : room.status === 2 ? '⏳ Chờ duyệt' : 'Đang thuê';
+
+            html += '<div class="cal-room-row">';
+
+            /* room info col */
+            html += '<div class="cal-room-col">'
+                  + '<div class="room-name">'+room.name+'</div>'
+                  + '<div class="room-meta"><i class="fas fa-map-marker-alt me-1"></i>'+room.address+'</div>'
+                  + '<div class="room-price"><i class="fas fa-money-bill me-1"></i>'+(+room.price).toLocaleString('vi-VN')+' VNĐ/tháng</div>'
+                  + '<span class="badge '+stCls+' mt-1" style="font-size:9px">'+stTxt+'</span>'
+                  + '</div>';
+
+            /* days area */
+            html += '<div class="cal-days-area">';
+
+            /* bg grid */
+            html += '<div class="cal-bg-cells">';
+            for (var d = 1; d <= n; d++) {
+                var dow   = new Date(cur.year, cur.month-1, d).getDay();
+                var cls   = 'cal-bg-cell';
+                if (isToday(cur.year, cur.month, d)) cls += ' today';
+                if (dow===0||dow===6)                cls += ' weekend';
+                html += '<div class="'+cls+'"></div>';
+            }
+            html += '</div>';
+
+            /* empty label */
+            if (contracts.length === 0) {
+                html += '<div class="cal-empty-lbl">Chưa có hợp đồng trong tháng này</div>';
+            }
+
+            /* contract bars */
+            contracts.forEach(function(c) {
+                var cStart = parseDate(c.startDate);
+                var cEnd   = parseDate(c.endDate);
+                var mStart = new Date(cur.year, cur.month-1, 1);
+                var mEnd   = new Date(cur.year, cur.month-1, n);
+                var bStart = cStart < mStart ? 1 : cStart.getDate();
+                var bEnd   = cEnd   > mEnd   ? n : cEnd.getDate();
+                var left   = (bStart - 1) / n * 100;
+                var width  = (bEnd - bStart + 1) / n * 100;
+                var bg     = c.isActive
+                    ? 'linear-gradient(135deg,#2563eb,#1d4ed8)'
+                    : 'linear-gradient(135deg,#64748b,#475569)';
+
+                html += '<div class="cal-bar"'
+                      + ' style="left:'+left+'%;width:'+width+'%;background:'+bg+';"'
+                      + ' onclick="showDetail('+c.id+')"'
+                      + ' title="'+c.userFullName+' | '+c.startDateDisplay+' - '+c.endDateDisplay+'">'
+                      + '<span class="bar-name">'+c.userFullName+'</span>'
+                      + '<span class="bar-dates"> '+c.startDateDisplay+' - '+c.endDateDisplay+'</span>'
+                      + '</div>';
+            });
+
+            /* today line */
+            if (todayD > 0) {
+                var lp = (todayD - 0.5) / n * 100;
+                html += '<div class="cal-today-line" style="left:'+lp+'%"></div>';
+            }
+
+            html += '</div></div>';
+        });
+
+        document.getElementById('calendarGrid').innerHTML = html;
+    }
+
+    /* ── Detail popup ── */
+
+    /* ── Helpers render HTML label-value ── */
+    function _iv(v, cls) {
+        var empty = !v || v === '—';
+        return '<span class="info-value' + (empty ? ' muted' : (cls ? ' ' + cls : '')) + '">' + (empty ? '—' : v) + '</span>';
+    }
+    function _ii(label, v, span, cls) {
+        return '<div class="info-item' + (span ? ' span-2' : '') + '"><span class="info-label">' + label + '</span>' + _iv(v, cls) + '</div>';
+    }
+    function _buildDetailHtml(d) {
+        var badge = d.isActive
+            ? '<span class="badge bg-success px-2 py-1" style="font-size:12px">✔ Đang hiệu lực</span>'
+            : '<span class="badge bg-secondary px-2 py-1" style="font-size:12px">✖ Đã kết thúc</span>';
+        return [
+            '<div class="info-group">',
+                '<div class="info-group-title">🏠 Thông tin phòng</div>',
+                '<div class="info-grid">',
+                    _ii('Tên phòng',  d.roomName),   _ii('Diện tích', d.roomArea),
+                    _ii('Địa chỉ',   d.roomAddress, true),
+                    _ii('Loại phòng', d.roomType),   _ii('Tầng',      d.roomFloor),
+                '</div>',
+            '</div>',
+            '<div class="info-group">',
+                '<div class="info-group-title">👤 Thông tin người thuê</div>',
+                '<div class="info-grid">',
+                    _ii('Họ tên',              d.tenantName),  _ii('Số điện thoại', d.tenantPhone),
+                    _ii('Email',               d.tenantEmail), _ii('Số CCCD',       d.tenantCccd),
+                    _ii('Liên hệ khẩn cấp',   d.tenantEmergency, true),
+                '</div>',
+            '</div>',
+            '<div class="info-group">',
+                '<div class="info-group-title">📄 Thông tin hợp đồng</div>',
+                '<div class="info-grid">',
+                    _ii('Ngày bắt đầu',              d.startDate),    _ii('Ngày kết thúc', d.endDate),
+                    _ii('Giá thuê / tháng',           d.monthlyRent, false, 'money'),
+                    _ii('Tiền cọc',                  d.deposit),
+                    _ii('Ngày thanh toán hàng tháng', d.paymentDay),
+                    _ii('Phí quản lý',               d.managementFee), _ii('Phí gửi xe', d.parkingFee),
+                    _ii('Chỉ số điện đầu kỳ',         d.electricMeter), _ii('Chỉ số nước đầu kỳ', d.waterMeter),
+                    '<div class="info-item"><span class="info-label">Trạng thái</span>' + badge + '</div>',
+                '</div>',
+            '</div>'
+        ].join('');
+    }
+
+    var _detailPopup    = null;
+    var _detailContent  = null;  /* jQuery ref tới scroll container bên trong popup */
+    var _currentLink    = '#';
+
+    function showDetail(contractId) {
+        var c    = allContracts.find(function(x){ return x.id === contractId; });
+        if (!c) return;
+        var room = allRooms.find(function(r){ return r.id === c.roomId; });
+
+        var d = {
+            roomName:        room ? room.name           : 'N/A',
+            roomArea:        room ? room.area + ' m²'   : '—',
+            roomAddress:     room ? room.address        : '—',
+            roomType:        '—',
+            roomFloor:       '—',
+            tenantName:      c.userFullName || '—',
+            tenantPhone:     '—',
+            tenantEmail:     c.userEmail   || '—',
+            tenantCccd:      '—',
+            tenantEmergency: '—',
+            startDate:       c.startDateDisplay        || '—',
+            endDate:         c.endDateDisplay          || '—',
+            monthlyRent:     c.monthlyRentFormatted    || '—',
+            deposit:         c.deposit      != null ? Number(c.deposit).toLocaleString('vi-VN') + ' VNĐ' : '—',
+            paymentDay:      c.paymentDay   != null ? 'Ngày ' + c.paymentDay + ' hàng tháng' : '—',
+            managementFee:   c.managementFee!= null ? Number(c.managementFee).toLocaleString('vi-VN') + ' VNĐ' : '—',
+            parkingFee:      c.parkingFee   != null ? Number(c.parkingFee).toLocaleString('vi-VN') + ' VNĐ' : '—',
+            electricMeter:   c.electricMeter!= null ? c.electricMeter + ' kWh' : '—',
+            waterMeter:      c.waterMeter   != null ? c.waterMeter + ' m³' : '—',
+            isActive:        c.isActive
+        };
+        _currentLink = '/Contract/Details/' + c.id;
+
+        if (!_detailPopup) {
+            _detailPopup = $('#contractDetailPopup').dxPopup({
+                title: 'Chi tiết hợp đồng',
+                width: 820,
+                height: 'auto',
+                maxHeight: '92vh',
+                dragEnabled: true,
+                hideOnOutsideClick: false,
+                showCloseButton: true,
+                toolbarItems: [
+                    {
+                        widget: 'dxButton', toolbar: 'bottom', location: 'before',
+                        options: {
+                            text: 'In hợp đồng', type: 'default', icon: 'print',
+                            onClick: function () { window.open(_currentLink, '_blank'); }
+                        }
+                    },
+                    {
+                        widget: 'dxButton', toolbar: 'bottom', location: 'after',
+                        options: {
+                            text: 'Gia hạn', type: 'normal', icon: 'refresh',
+                            onClick: function () {
+                                Swal.fire({ icon: 'info', title: 'Thông báo', text: 'Chức năng gia hạn đang được phát triển.' });
+                            }
+                        }
+                    },
+                    {
+                        widget: 'dxButton', toolbar: 'bottom', location: 'after',
+                        options: {
+                            text: 'Đóng', type: 'danger', icon: 'close',
+                            onClick: function () { _detailPopup.hide(); }
+                        }
+                    }
+                ],
+                contentTemplate: function (container) {
+                    _detailContent = $('<div>').css({
+                        overflowY: 'auto',
+                        maxHeight: 'calc(92vh - 130px)',
+                        padding: '14px 18px'
+                    }).appendTo(container);
+                    _detailContent.html(_buildDetailHtml(d));
+                }
+            }).dxPopup('instance');
+        } else {
+            _detailContent.html(_buildDetailHtml(d));
+        }
+
+        _detailPopup.show();
+    }
+
+    /* ── Navigation ── */
+    function prevMonth() {
+        cur.month--; if (cur.month < 1)  { cur.month = 12; cur.year--; }
+        document.getElementById('monthLabel').textContent = MONTHS[cur.month-1] + ' ' + cur.year;
+        loadData();
+    }
+    function nextMonth() {
+        cur.month++; if (cur.month > 12) { cur.month = 1;  cur.year++; }
+        document.getElementById('monthLabel').textContent = MONTHS[cur.month-1] + ' ' + cur.year;
+        loadData();
+    }
+    function goToday() {
+        var t = new Date(); cur.year = t.getFullYear(); cur.month = t.getMonth()+1;
+        document.getElementById('monthLabel').textContent = MONTHS[cur.month-1] + ' ' + cur.year;
+        loadData();
+    }
+
+    /* ── Init ── */
+    $(function() {
+        document.getElementById('monthLabel').textContent = MONTHS[cur.month-1] + ' ' + cur.year;
+        loadData();
+    });
+</script>
+}

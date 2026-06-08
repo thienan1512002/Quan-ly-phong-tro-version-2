@@ -1,0 +1,120 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "Đăng ký tài khoản";
+}
+@model QuanLyPhongTro.Models.ViewModels.RegisterViewModel
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng ký - Quản Lý Phòng Trọ</title>
+    <link href="https://unpkg.com/@@coreui/coreui@5.4.0/dist/css/coreui.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+    <style>
+        body { background: linear-gradient(135deg, #3c4b64, #4f5d73); min-height: 100vh; display: flex; align-items: center; padding: 20px 0; }
+        .register-card { max-width: 460px; width: 100%; margin: 0 auto; }
+        .register-card .card { border: none; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+        .register-header { background: linear-gradient(135deg, #321fdb, #4f5d73); color: white; padding: 24px 30px; border-radius: 12px 12px 0 0; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="register-card px-3">
+        <div class="card">
+            <div class="register-header">
+                <i class="fas fa-user-plus fa-2x mb-2"></i>
+                <h5 class="mb-0">Tạo tài khoản mới</h5>
+                <p class="mb-0 opacity-75" style="font-size:0.85rem">Quản Lý Phòng Trọ</p>
+            </div>
+            <div class="card-body p-4">
+                <form asp-controller="Account" asp-action="Register" method="post">
+                    @Html.AntiForgeryToken()
+
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger py-2">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            @Html.ValidationSummary(true)
+                        </div>
+                    }
+
+                    <div class="row g-3">
+                        <!-- Tên đăng nhập -->
+                        <div class="col-12">
+                            <label asp-for="Username" class="form-label fw-semibold"></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                <input asp-for="Username" class="form-control" placeholder="Chọn tên đăng nhập" autocomplete="username" />
+                            </div>
+                            <span asp-validation-for="Username" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Họ và tên -->
+                        <div class="col-12">
+                            <label asp-for="FullName" class="form-label fw-semibold"></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-id-card"></i></span>
+                                <input asp-for="FullName" class="form-control" placeholder="Họ và tên đầy đủ" />
+                            </div>
+                            <span asp-validation-for="FullName" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="col-12">
+                            <label asp-for="Email" class="form-label fw-semibold"></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                <input asp-for="Email" class="form-control" placeholder="email@example.com" autocomplete="email" />
+                            </div>
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Số điện thoại -->
+                        <div class="col-12">
+                            <label asp-for="PhoneNumber" class="form-label fw-semibold"></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                                <input asp-for="PhoneNumber" class="form-control" placeholder="0xxxxxxxxx (tuỳ chọn)" />
+                            </div>
+                            <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Mật khẩu -->
+                        <div class="col-sm-6">
+                            <label asp-for="Password" class="form-label fw-semibold"></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                <input asp-for="Password" class="form-control" placeholder="Ít nhất 6 ký tự" autocomplete="new-password" />
+                            </div>
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Xác nhận mật khẩu -->
+                        <div class="col-sm-6">
+                            <label asp-for="ConfirmPassword" class="form-label fw-semibold"></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                <input asp-for="ConfirmPassword" class="form-control" placeholder="Nhập lại mật khẩu" autocomplete="new-password" />
+                            </div>
+                            <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 mt-4">
+                        <i class="fas fa-user-plus me-2"></i> Đăng ký
+                    </button>
+                </form>
+
+                <hr class="my-3" />
+                <div class="text-center" style="font-size:0.9rem">
+                    Đã có tài khoản?
+                    <a asp-controller="Account" asp-action="Login" class="fw-semibold">Đăng nhập ngay</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/@@coreui/coreui@5.4.0/dist/js/coreui.bundle.min.js"></script>
+</body>
+</html>

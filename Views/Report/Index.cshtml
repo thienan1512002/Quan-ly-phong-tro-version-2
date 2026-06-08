@@ -1,0 +1,70 @@
+@{
+    ViewData["Title"] = "Xuất báo cáo";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0"><i class="fas fa-chart-line me-2 text-primary"></i>Xuất báo cáo</h4>
+    <small class="text-muted">Chọn loại báo cáo cần xem hoặc xuất file</small>
+</div>
+
+<div class="row g-4">
+    <!-- Báo cáo thuê nhà -->
+    <div class="col-md-6">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rounded-3 p-3 bg-primary bg-opacity-10 me-3">
+                        <i class="fas fa-file-contract fa-2x text-primary"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-0 fw-bold">Báo cáo thuê nhà</h5>
+                        <small class="text-muted">Danh sách hợp đồng theo kỳ</small>
+                    </div>
+                </div>
+                <p class="text-muted mb-3">
+                    Thống kê toàn bộ hợp đồng thuê phòng: danh sách hợp đồng hiệu lực / đã kết thúc,
+                    thông tin người thuê, giá thuê, tiền cọc theo tháng/năm chọn.
+                </p>
+                <ul class="list-unstyled text-muted small mb-4">
+                    <li><i class="fas fa-check text-success me-2"></i>Lọc theo năm, tháng, trạng thái</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Tổng hợp số liệu cuối trang</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Xuất CSV (mở được bằng Excel)</li>
+                    <li><i class="fas fa-check text-success me-2"></i>In trực tiếp từ trình duyệt</li>
+                </ul>
+                <a asp-action="RentalReport" class="btn btn-primary w-100">
+                    <i class="fas fa-eye me-2"></i>Xem báo cáo thuê nhà
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Báo cáo doanh thu -->
+    <div class="col-md-6">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rounded-3 p-3 bg-success bg-opacity-10 me-3">
+                        <i class="fas fa-coins fa-2x text-success"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-0 fw-bold">Báo cáo doanh thu</h5>
+                        <small class="text-muted">Doanh thu theo tháng trong năm</small>
+                    </div>
+                </div>
+                <p class="text-muted mb-3">
+                    Thống kê doanh thu thuê phòng từng tháng trong năm: tổng doanh thu, tháng cao nhất,
+                    top phòng đóng góp nhiều nhất, biểu đồ cột theo tháng.
+                </p>
+                <ul class="list-unstyled text-muted small mb-4">
+                    <li><i class="fas fa-check text-success me-2"></i>Lọc theo năm</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Biểu đồ doanh thu 12 tháng</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Top 10 phòng doanh thu cao nhất</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Xuất CSV (mở được bằng Excel)</li>
+                </ul>
+                <a asp-action="RevenueReport" class="btn btn-success w-100">
+                    <i class="fas fa-eye me-2"></i>Xem báo cáo doanh thu
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

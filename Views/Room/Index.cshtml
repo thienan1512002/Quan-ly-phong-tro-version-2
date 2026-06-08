@@ -1,0 +1,641 @@
+@{
+    ViewData["Title"] = "Quản lý phòng trọ";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0"><i class="fas fa-door-open me-2 text-primary"></i>Danh sách phòng</h4>
+    @if (User.IsInRole("Admin"))
+    {
+        <button class="btn btn-primary" onclick="openAddRoomModal()">
+            <i class="fas fa-plus me-1"></i> Thêm phòng
+        </button>
+    }
+</div>
+
+<style>
+.room-img-wrap { height:180px;overflow:hidden;background:#f1f3f5;position:relative;display:flex;align-items:center;justify-content:center;color:#adb5bd;font-size:13px;text-align:center;border-bottom:1px solid #dee2e6; }
+.room-img-wrap.no-img { flex-direction:column;cursor:default; }
+.room-img-wrap:not(.no-img) { cursor:pointer; }
+.room-card-img { width:100%;height:180px;object-fit:cover;transition:transform .3s; }
+.room-img-wrap:not(.no-img):hover .room-card-img { transform:scale(1.06); }
+.img-count-badge { position:absolute;bottom:6px;right:8px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;padding:2px 8px;border-radius:12px;pointer-events:none; }
+.room-card { transition:box-shadow .2s; }
+.room-card:hover { box-shadow:0 6px 24px rgba(0,0,0,.13) !important; }
+</style>
+
+<div class="mb-3 d-flex gap-2 flex-wrap align-items-center">
+    <input type="text" id="roomSearch" class="form-control" placeholder="🔍 Tìm kiếm theo tên phòng, địa chỉ..." oninput="filterCards(this.value)" style="max-width:380px">
+    <select id="roomSort" class="form-select" style="max-width:230px" onchange="changeSortMode(this.value)">
+        <option value="available">⬆ Phòng trống trước</option>
+        <option value="price_asc">💰 Giá: Thấp → Cao</option>
+        <option value="price_desc">💰 Giá: Cao → Thấp</option>
+        <option value="area_asc">📐 Diện tích: Thấp → Cao</option>
+        <option value="area_desc">📐 Diện tích: Cao → Thấp</option>
+    </select>
+</div>
+<div class="row" id="roomCards">
+    <div class="col-12 text-center py-5 text-muted"><i class="fas fa-spinner fa-spin fa-2x"></i></div>
+</div>
+
+<script src="~/js/address-data.js"></script>
+<script>
+    // =====================================================
+    // CARD VIEW - Hiển thị danh sách phòng dạng card
+    // =====================================================
+    const isAdmin = @(User.IsInRole("Admin") ? "true" : "false");
+    let _allRooms = [];
+    let _sortMode = 'available';
+
+    function getSortedRooms(rooms) {
+        const arr = [...rooms];
+        if (_sortMode === 'price_asc')  return arr.sort(function(a,b){ return a.price - b.price; });
+        if (_sortMode === 'price_desc') return arr.sort(function(a,b){ return b.price - a.price; });
+        if (_sortMode === 'area_asc')   return arr.sort(function(a,b){ return a.area  - b.area;  });
+        if (_sortMode === 'area_desc')  return arr.sort(function(a,b){ return b.area  - a.area;  });
+        // default: trống (0) trước, chờ duyệt (2) giữa, đã thuê (1) cuối
+        return arr.sort(function(a,b){
+            const rank = {0:0, 2:1, 1:2};
+            return (rank[a.status] ?? 3) - (rank[b.status] ?? 3);
+        });
+    }
+
+    function changeSortMode(val) {
+        _sortMode = val;
+        renderCards(getSortedRooms(_allRooms));
+        filterCards(document.getElementById('roomSearch').value);
+    }
+
+    $(function() { loadRoomCards(); });
+
+    async function loadRoomCards() {
+        try {
+            const res = await fetch('/Room/GetAll');
+            _allRooms = await res.json();
+            renderCards(getSortedRooms(_allRooms));
+        } catch(e) {
+            document.getElementById('roomCards').innerHTML =
+                '<div class="col-12 text-danger text-center py-4"><i class="fas fa-exclamation-circle me-2"></i>Lỗi tải dữ liệu phòng.</div>';
+        }
+    }
+
+    function renderCards(rooms) {
+        const wrap = document.getElementById('roomCards');
+        if (!rooms.length) {
+            wrap.innerHTML = '<div class="col-12 text-center text-muted py-5"><i class="fas fa-door-open fa-3x mb-3 d-block"></i>Chưa có phòng nào.</div>';
+            return;
+        }
+        wrap.innerHTML = rooms.map(function(r) {
+            const mainImg  = r.images && r.images.find(i => i.isMain);
+            const imgUrl   = mainImg ? '/images/rooms/' + mainImg.fileName : null;
+            const hasImgs  = r.images && r.images.length > 0;
+            const statusLabel = r.status === 0 ? 'Trống' : r.status === 2 ? '⏳ Chờ duyệt' : 'Đã thuê';
+            const statusCls   = r.status === 0 ? 'success' : r.status === 2 ? 'warning text-dark' : 'danger';
+            const fullAddr = [r.address, r.ward, r.city].filter(Boolean).join(', ');
+            const safeName = (r.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
+            const imgHtml = hasImgs
+                ? '<div class="room-img-wrap" onclick="openSlideshow(' + r.id + ')">' +
+                  '<img src="' + imgUrl + '" class="room-card-img">' +
+                  (r.images.length > 1 ? '<span class="img-count-badge"><i class="fas fa-images"></i> ' + r.images.length + '</span>' : '') +
+                  '</div>'
+                : '<div class="room-img-wrap no-img">' +
+                  '<i class="fas fa-image fa-2x mb-1 d-block"></i>Chưa có ảnh' +
+                  '</div>';
+
+            const adminHtml = isAdmin
+                ? '<div class="card-footer bg-transparent p-2 d-flex gap-1 justify-content-end">' +
+                  '<button class="btn btn-sm btn-outline-info" title="Quản lý ảnh" onclick="openImageManager(' + r.id + ',\'' + safeName + '\')"><i class="fas fa-images"></i></button>' +
+                  '<a class="btn btn-sm btn-outline-warning" href="/Room/Edit/' + r.id + '"><i class="fas fa-edit"></i></a>' +
+                  '<button class="btn btn-sm btn-outline-danger" onclick="confirmDelete(' + r.id + ')"><i class="fas fa-trash"></i></button>' +
+                  '</div>'
+                : '';
+
+            return '<div class="col-12 col-sm-6 col-md-4 col-xl-3 mb-4">' +
+                   '<div class="card h-100 shadow-sm room-card" data-name="' + (r.name || '').toLowerCase() + '" data-addr="' + fullAddr.toLowerCase() + '">' +
+                   imgHtml +
+                   '<div class="card-body p-3">' +
+                   '<div class="d-flex justify-content-between align-items-start mb-1">' +
+                   '<h6 class="mb-0 fw-bold text-truncate" style="max-width:165px">' + (r.name || '') + '</h6>' +
+                   '<span class="badge bg-' + statusCls + ' ms-1 flex-shrink-0">' + statusLabel + '</span>' +
+                   '</div>' +
+                   '<div class="text-primary fw-semibold mb-1" style="font-size:14px">' + (r.price || 0).toLocaleString('vi-VN') + ' VNĐ/tháng</div>' +
+                   '<div class="text-muted" style="font-size:12px"><i class="fas fa-ruler-combined me-1"></i>' + r.area + ' m²</div>' +
+                   '<div class="text-muted text-truncate mt-1" style="font-size:12px" title="' + fullAddr + '"><i class="fas fa-map-marker-alt me-1"></i>' + (fullAddr || 'Chưa có địa chỉ') + '</div>' +
+                   '</div>' +
+                   adminHtml +
+                   '</div></div>';
+        }).join('');
+    }
+
+    function filterCards(q) {
+        const term = (q || '').toLowerCase().trim();
+        document.querySelectorAll('.room-card').forEach(function(card) {
+            const match = !term || card.dataset.name.includes(term) || card.dataset.addr.includes(term);
+            card.closest('[class*="col-12"]').style.display = match ? '' : 'none';
+        });
+    }
+
+    function confirmDelete(id) {
+        Swal.fire({
+            title: 'Xác nhận xóa phòng', text: 'Xóa phòng này? Thao tác không thể hoàn tác.',
+            imageUrl: window._swalConfirmImg, imageWidth: 80, imageHeight: 80,
+            showCancelButton: true, confirmButtonColor: '#dc3545',
+            confirmButtonText: 'Xóa', cancelButtonText: 'Hủy'
+        }).then(function(r) { if (r.isConfirmed) deleteRoom(id); });
+    }
+
+    function reloadRoomGrid() { loadRoomCards(); }
+
+    // ===== SLIDESHOW =====
+    let _slideImages = [], _slideIdx = 0, _slidePopup = null;
+
+    function openSlideshow(roomId) {
+        const room = _allRooms.find(function(r) { return r.id === roomId; });
+        if (!room || !room.images || !room.images.length) return;
+        _slideImages = room.images;
+        const mainIdx = room.images.findIndex(function(i) { return i.isMain; });
+        _slideIdx = mainIdx >= 0 ? mainIdx : 0;
+        if (!_slidePopup) {
+            _slidePopup = $('#slideshowPopup').dxPopup({
+                title: '',
+                width: 780, height: 'auto', maxHeight: '92vh',
+                dragEnabled: true, hideOnOutsideClick: true, showCloseButton: true,
+                contentTemplate: function(container) {
+                    container[0].innerHTML =
+                        '<div style="text-align:center">' +
+                        '<img id="slideImg" style="max-width:100%;max-height:62vh;border-radius:8px;display:block;margin:0 auto;object-fit:contain">' +
+                        '<div class="mt-3 d-flex align-items-center justify-content-center gap-3">' +
+                        '<button class="btn btn-outline-secondary" onclick="slideNav(-1)"><i class="fas fa-chevron-left"></i></button>' +
+                        '<span id="slideCounter" style="font-size:14px;min-width:55px;text-align:center;color:#6c757d"></span>' +
+                        '<button class="btn btn-outline-secondary" onclick="slideNav(1)"><i class="fas fa-chevron-right"></i></button>' +
+                        '</div>' +
+                        '<div id="slideDots" class="mt-2 d-flex justify-content-center gap-2 flex-wrap pb-1"></div>' +
+                        '</div>';
+                }
+            }).dxPopup('instance');
+        }
+        _slidePopup.option('title', '🖼 ' + (room.name || 'Ảnh phòng'));
+        _slidePopup.show();
+        updateSlide();
+    }
+
+    function updateSlide() {
+        const img = _slideImages[_slideIdx];
+        const el  = document.getElementById('slideImg');
+        if (el) el.src = '/images/rooms/' + img.fileName;
+        const ctr = document.getElementById('slideCounter');
+        if (ctr) ctr.textContent = (_slideIdx + 1) + ' / ' + _slideImages.length;
+        const dots = document.getElementById('slideDots');
+        if (dots) {
+            dots.innerHTML = _slideImages.map(function(_, i) {
+                return '<span onclick="jumpSlide(' + i + ')" style="width:10px;height:10px;border-radius:50%;background:' +
+                    (i === _slideIdx ? '#0d6efd' : '#dee2e6') +
+                    ';display:inline-block;cursor:pointer;transition:background .2s"></span>';
+            }).join('');
+        }
+    }
+
+    function slideNav(delta) {
+        _slideIdx = (_slideIdx + delta + _slideImages.length) % _slideImages.length;
+        updateSlide();
+    }
+
+    function jumpSlide(i) { _slideIdx = i; updateSlide(); }
+
+    // Helper lấy Anti-forgery token
+                        function getAntiForgeryToken() {
+                return $('input[name="__RequestVerificationToken"]').first().val() || "";
+            }
+
+                        // Xóa phòng bằng JS form submit
+                        function deleteRoom(id) {
+                const frm = document.createElement("form");
+                        frm.method = "post";
+                        frm.action = `/Room/Delete/${id}`;
+
+                const tkn = document.createElement("input");
+                tkn.type = "hidden";
+                tkn.name = "__RequestVerificationToken";
+                tkn.value = getAntiForgeryToken();
+                frm.appendChild(tkn);
+
+                document.body.appendChild(frm);
+                frm.submit();
+            }
+
+    // ===== QUẢN LÝ ẢNH PHÒNG =====
+    let _imgPopup  = null;
+    let _imgRoomId = null;
+
+    async function openImageManager(roomId, roomName) {
+        _imgRoomId = roomId;
+        if (!_imgPopup) {
+            _imgPopup = $("#imgManagerPopup").dxPopup({
+                title: "",
+                width: 760,
+                height: "auto",
+                maxHeight: "90vh",
+                dragEnabled: true,
+                hideOnOutsideClick: false,
+                showCloseButton: true,
+                contentTemplate: function(container) {
+                    container.append(`
+                        <div id="imgUploadArea" style="border:2px dashed #adb5bd;border-radius:8px;padding:16px;text-align:center;cursor:pointer;margin-bottom:12px;color:#6c757d">
+                            <i class="fas fa-cloud-upload-alt fa-2x mb-2"></i>
+                            <div>Kéo thả hoặc <strong>click</strong> để chọn ảnh (jpg/png/webp, tối đa 10MB)</div>
+                            <input type="file" id="imgFileInput" accept=".jpg,.jpeg,.png,.webp,.gif" multiple style="display:none">
+                        </div>
+                        <div id="imgProgressBar" class="progress mb-3" style="display:none;height:6px">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" style="width:100%"></div>
+                        </div>
+                        <div id="imgGrid" class="row g-2"></div>
+                    `);
+                    // click vùng upload
+                    container.find("#imgUploadArea").on("click", function() {
+                        container.find("#imgFileInput").trigger("click");
+                    });
+                    container.find("#imgFileInput").on("change", function() {
+                        if (this.files.length) uploadImages(this.files);
+                    });
+                    // drag & drop
+                    container.find("#imgUploadArea")
+                        .on("dragover", function(e) { e.preventDefault(); $(this).css("border-color","#0d6efd"); })
+                        .on("dragleave", function()  { $(this).css("border-color","#adb5bd"); })
+                        .on("drop", function(e) {
+                            e.preventDefault(); $(this).css("border-color","#adb5bd");
+                            uploadImages(e.originalEvent.dataTransfer.files);
+                        });
+                }
+            }).dxPopup("instance");
+        }
+        _imgPopup.option("title", `🖼 Ảnh phòng: ${roomName}`);
+        _imgPopup.show();
+        await loadImages();
+    }
+
+    async function loadImages() {
+        const res  = await fetch(`/Room/GetImages?roomId=${_imgRoomId}`);
+        const imgs = await res.json();
+        const grid = $("#imgGrid").empty();
+        if (!imgs.length) {
+            grid.append('<div class="text-muted text-center py-3 w-100">Chưa có ảnh nào.</div>');
+            return;
+        }
+        imgs.forEach(function(img) {
+            const col = $('<div class="col-6 col-md-4 col-lg-3">');
+            const card = $('<div class="card h-100 position-relative">').appendTo(col);
+            // ảnh
+            $('<img class="card-img-top" style="height:140px;object-fit:cover">')
+                .attr("src", img.url).appendTo(card);
+            // badge ảnh chính
+            if (img.isMain) {
+                $('<span class="badge bg-warning text-dark position-absolute top-0 start-0 m-1" style="font-size:10px">⭐ Chính</span>').appendTo(card);
+            }
+            // nút
+            const footer = $('<div class="card-footer p-1 d-flex gap-1 justify-content-center">').appendTo(card);
+            if (!img.isMain) {
+                $('<button class="btn btn-xs btn-outline-warning flex-fill" style="font-size:11px">')
+                    .text("Đặt chính").on("click", function() { setMain(img.id); }).appendTo(footer);
+            }
+            $('<button class="btn btn-xs btn-outline-danger flex-fill" style="font-size:11px">')
+                .html('<i class="fas fa-trash"></i>').on("click", function() { deleteImg(img.id); }).appendTo(footer);
+            grid.append(col);
+        });
+    }
+
+    async function uploadImages(files) {
+        const bar = $("#imgProgressBar").show();
+        const fd  = new FormData();
+        fd.append("__RequestVerificationToken", getAntiForgeryToken());
+        fd.append("roomId", _imgRoomId);
+        for (let f of files) fd.append("files", f);
+        const res  = await fetch("/Room/UploadImages", { method: "POST", body: fd });
+        const json = await res.json();
+        bar.hide();
+        $("#imgFileInput").val("");
+        if (json.success) await loadImages();
+        else Swal.fire({ icon: "error", title: "Lỗi", text: json.message });
+    }
+
+    async function deleteImg(imgId) {
+        const r = await Swal.fire({
+            title: "Xóa ảnh này?", icon: "warning",
+            showCancelButton: true, confirmButtonColor: "#dc3545",
+            confirmButtonText: "Xóa", cancelButtonText: "Hủy"
+        });
+        if (!r.isConfirmed) return;
+        const fd = new FormData();
+        fd.append("__RequestVerificationToken", getAntiForgeryToken());
+        fd.append("imageId", imgId);
+        await fetch("/Room/DeleteImage", { method: "POST", body: fd });
+        await loadImages();
+    }
+
+    async function setMain(imgId) {
+        const fd = new FormData();
+        fd.append("__RequestVerificationToken", getAntiForgeryToken());
+        fd.append("imageId", imgId);
+        await fetch("/Room/SetMainImage", { method: "POST", body: fd });
+        await loadImages();
+    }
+
+    // ===== THÊM PHÒNG MỚI =====
+    let addRoomPopup = null;
+    let addRoomForm  = null;
+    let _addFormCityBox = null;
+    let _addFormWardBox = null;
+    let _pendingFiles   = [];
+    let _renderPreviewFn = null;   // closure fn được gán trong contentTemplate
+
+    function openAddRoomModal() {
+        if (!addRoomPopup) {
+            addRoomPopup = $("#addRoomPopup").dxPopup({
+                title: "Thêm phòng mới",
+                width: 860,
+                height: "auto",
+                maxHeight: "92vh",
+                dragEnabled: true,
+                hideOnOutsideClick: false,
+                showCloseButton: true,
+                toolbarItems: [
+                    {
+                        widget: "dxButton", toolbar: "bottom", location: "after",
+                        options: { text: "Lưu", type: "default", icon: "save", onClick: saveRoom }
+                    },
+                    {
+                        widget: "dxButton", toolbar: "bottom", location: "after",
+                        options: { text: "Hủy", type: "normal", onClick: function () { addRoomPopup.hide(); } }
+                    }
+                ],
+                contentTemplate: function (container) {
+                    container.css("overflow-y", "auto");
+
+                    // ── dxForm thông tin phòng ──
+                    const formDiv = $("<div>").appendTo(container);
+                    addRoomForm = formDiv.dxForm({
+                        colCount: 2,
+                        labelMode: "floating",
+                        items: [
+                            {
+                                dataField: "Name", colSpan: 2,
+                                label: { text: "Tên phòng" }, editorType: "dxTextBox",
+                                editorOptions: { placeholder: "VD: Phòng 101" },
+                                validationRules: [{ type: "required", message: "Vui lòng nhập tên phòng." }]
+                            },
+                            {
+                                dataField: "Price", label: { text: "Giá thuê (VNĐ/tháng)" },
+                                editorType: "dxNumberBox",
+                                editorOptions: { format: "#,##0 VNĐ", step: 100000, min: 0, placeholder: "VD: 2500000" },
+                                validationRules: [
+                                    { type: "required", message: "Vui lòng nhập giá thuê." },
+                                    { type: "range", min: 1, message: "Giá thuê phải lớn hơn 0." }
+                                ]
+                            },
+                            {
+                                dataField: "Area", label: { text: "Diện tích (m²)" },
+                                editorType: "dxNumberBox",
+                                editorOptions: { format: "#,##0.# m²", step: 0.5, min: 0, placeholder: "VD: 25" },
+                                validationRules: [
+                                    { type: "required", message: "Vui lòng nhập diện tích." },
+                                    { type: "range", min: 1, message: "Diện tích phải lớn hơn 0." }
+                                ]
+                            },
+                            {
+                                dataField: "Address", colSpan: 2,
+                                label: { text: "Địa chỉ (số nhà, tên đường)" }, editorType: "dxTextBox",
+                                editorOptions: { placeholder: "VD: 123 Nguyễn Văn Cừ" },
+                                validationRules: [{ type: "required", message: "Vui lòng nhập địa chỉ." }]
+                            },
+                            {
+                                dataField: "City", label: { text: "Thành phố / Tỉnh" },
+                                template: function(data, itemElement) {
+                                    const box = $('<div>').appendTo(itemElement);
+                                    _addFormCityBox = box.dxSelectBox({
+                                        dataSource: [], valueExpr: "name", displayExpr: "name",
+                                        placeholder: "-- Chọn tỉnh/thành phố --",
+                                        showClearButton: true, searchEnabled: true,
+                                        onValueChanged: async function(e) {
+                                            const item = e.component.option("selectedItem");
+                                            addRoomForm.updateData("City", e.value || "");
+                                            if (item) {
+                                                const wards = await fetchWards(item.code);
+                                                _addFormWardBox.option("dataSource", wards);
+                                                _addFormWardBox.option("value", null);
+                                                _addFormWardBox.option("disabled", false);
+                                            } else {
+                                                _addFormWardBox.option("dataSource", []);
+                                                _addFormWardBox.option("value", null);
+                                                _addFormWardBox.option("disabled", true);
+                                            }
+                                        }
+                                    }).dxSelectBox("instance");
+                                    fetchProvinces().then(function(list) { _addFormCityBox.option("dataSource", list); });
+                                }
+                            },
+                            {
+                                dataField: "Ward", label: { text: "Phường / Xã" },
+                                template: function(data, itemElement) {
+                                    const box = $('<div>').appendTo(itemElement);
+                                    _addFormWardBox = box.dxSelectBox({
+                                        dataSource: [], valueExpr: "name", displayExpr: "name",
+                                        placeholder: "-- Chọn phường/xã --",
+                                        showClearButton: true, searchEnabled: true, disabled: true,
+                                        onValueChanged: function(e) { addRoomForm.updateData("Ward", e.value || ""); }
+                                    }).dxSelectBox("instance");
+                                }
+                            },
+                            {
+                                dataField: "Status", label: { text: "Trạng thái" },
+                                editorType: "dxSelectBox",
+                                editorOptions: {
+                                    items: [{ id: 0, text: "Trống" }, { id: 1, text: "Đã thuê" }],
+                                    valueExpr: "id", displayExpr: "text", value: 0
+                                }
+                            },
+                            {
+                                dataField: "Description", label: { text: "Mô tả" },
+                                editorType: "dxTextArea",
+                                editorOptions: { placeholder: "Mô tả thêm về phòng (không bắt buộc)", height: 90, autoResizeEnabled: true }
+                            }
+                        ]
+                    }).dxForm("instance");
+
+                    // ── Khu vực upload ảnh ──
+                    // Pattern: input[file] opacity:0 phủ toàn dropzone → click ở đâu cũng mở dialog trực tiếp
+                    const uploadWrapper = document.createElement("div");
+                    uploadWrapper.style.marginTop = "16px";
+
+                    const sectionTitle = document.createElement("div");
+                    sectionTitle.style.cssText = "font-weight:600;margin-bottom:8px;color:#495057";
+                    sectionTitle.innerHTML = '<i class="fas fa-images me-1"></i>Ảnh phòng <span style="font-weight:400;font-size:12px;color:#6c757d">(không bắt buộc)</span>';
+                    uploadWrapper.appendChild(sectionTitle);
+
+                    // Dropzone chứa input[file] phủ trực tiếp
+                    const dropZone = document.createElement("div");
+                    dropZone.style.cssText = "position:relative;border:2px dashed #adb5bd;border-radius:8px;padding:20px 12px;text-align:center;color:#6c757d;font-size:13px;user-select:none";
+                    dropZone.innerHTML = '<i class="fas fa-cloud-upload-alt fa-lg"></i>&nbsp;Kéo thả hoặc <strong>click</strong> để chọn ảnh';
+
+                    // Input file phủ toàn bộ dropzone (opacity:0), click thẳng vào input → mở dialog ngay
+                    const fileInput = document.createElement("input");
+                    fileInput.type = "file";
+                    fileInput.accept = "image/*";
+                    fileInput.multiple = true;
+                    fileInput.style.cssText = "position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer";
+                    dropZone.appendChild(fileInput);
+                    uploadWrapper.appendChild(dropZone);
+
+                    // Preview container
+                    const previewNode = document.createElement("div");
+                    previewNode.style.cssText = "display:flex;flex-wrap:wrap;gap:8px;margin-top:10px";
+                    uploadWrapper.appendChild(previewNode);
+
+                    container[0].appendChild(uploadWrapper);
+
+                    // ─ Render thumbnails ─
+                    function doRenderPreview() {
+                        previewNode.innerHTML = "";
+                        _pendingFiles.forEach(function(item, idx) {
+                            const wrap = document.createElement("div");
+                            wrap.style.cssText = "position:relative;width:100px;flex-shrink:0";
+
+                            const img = document.createElement("img");
+                            img.src = item.dataUrl;
+                            img.style.cssText = "width:100px;height:78px;object-fit:cover;border-radius:6px;border:1px solid #dee2e6;display:block";
+                            wrap.appendChild(img);
+
+                            if (idx === 0) {
+                                const badge = document.createElement("span");
+                                badge.textContent = "⭐ Chính";
+                                badge.style.cssText = "position:absolute;top:3px;left:3px;background:#ffc107;color:#000;font-size:9px;padding:1px 4px;border-radius:3px;pointer-events:none";
+                                wrap.appendChild(badge);
+                            }
+
+                            const btn = document.createElement("button");
+                            btn.type = "button";
+                            btn.textContent = "✕";
+                            btn.style.cssText = "position:absolute;top:2px;right:2px;background:#dc3545;border:none;color:#fff;border-radius:50%;width:18px;height:18px;font-size:11px;line-height:1;cursor:pointer;padding:0";
+                            (function(i){ btn.onclick = function(e){ e.stopPropagation(); _pendingFiles.splice(i,1); doRenderPreview(); }; })(idx);
+                            wrap.appendChild(btn);
+
+                            const lbl = document.createElement("div");
+                            lbl.textContent = item.file.name;
+                            lbl.style.cssText = "font-size:10px;color:#6c757d;text-align:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:100px;margin-top:2px";
+                            wrap.appendChild(lbl);
+
+                            previewNode.appendChild(wrap);
+                        });
+                    }
+
+                    _renderPreviewFn = doRenderPreview;
+
+                    // ─ Xử lý files → FileReader → resize canvas → preview ─
+                    function handleFileList(files) {
+                        for (const file of files) {
+                            if (!file.type.startsWith("image/")) continue;
+                            // Không giới hạn size — dùng canvas resize để tạo thumbnail nhẹ cho preview
+                            (function(f) {
+                                const reader = new FileReader();
+                                reader.onload = function(e) {
+                                    const tmpImg = new Image();
+                                    tmpImg.onload = function() {
+                                        // Resize về tối đa 300px (chỉ cho preview, file gốc vẫn upload)
+                                        const MAX = 300;
+                                        let w = tmpImg.width, h = tmpImg.height;
+                                        if (w > MAX || h > MAX) {
+                                            if (w >= h) { h = Math.round(h * MAX / w); w = MAX; }
+                                            else        { w = Math.round(w * MAX / h); h = MAX; }
+                                        }
+                                        const canvas = document.createElement("canvas");
+                                        canvas.width = w; canvas.height = h;
+                                        canvas.getContext("2d").drawImage(tmpImg, 0, 0, w, h);
+                                        const thumbUrl = canvas.toDataURL("image/jpeg", 0.8);
+                                        _pendingFiles.push({ file: f, dataUrl: thumbUrl });
+                                        doRenderPreview();
+                                    };
+                                    tmpImg.src = e.target.result;
+                                };
+                                reader.readAsDataURL(f);
+                            })(file);
+                        }
+                    }
+
+                    // Change event — triggered khi user chọn file qua dialog
+                    fileInput.addEventListener("change", function() {
+                        if (this.files.length) handleFileList(this.files);
+                        this.value = ""; // reset để chọn lại cùng file nếu cần
+                    });
+
+                    // Drag & drop
+                    dropZone.addEventListener("dragenter", function(e){ e.preventDefault(); dropZone.style.borderColor="#0d6efd"; });
+                    dropZone.addEventListener("dragover",  function(e){ e.preventDefault(); dropZone.style.borderColor="#0d6efd"; });
+                    dropZone.addEventListener("dragleave", function(e){ dropZone.style.borderColor="#adb5bd"; });
+                    dropZone.addEventListener("drop", function(e) {
+                        e.preventDefault();
+                        dropZone.style.borderColor = "#adb5bd";
+                        if (e.dataTransfer && e.dataTransfer.files.length) handleFileList(e.dataTransfer.files);
+                    });
+                }
+            }).dxPopup("instance");
+        } else {
+            addRoomForm.resetValues();
+            addRoomForm.option("formData.Status", 0);
+            if (_addFormCityBox) { _addFormCityBox.option("value", null); }
+            if (_addFormWardBox) { _addFormWardBox.option("items", []); _addFormWardBox.option("value", null); _addFormWardBox.option("disabled", true); }
+            _pendingFiles = [];
+            if (_renderPreviewFn) _renderPreviewFn();
+        }
+        addRoomPopup.show();
+    }
+
+    function addPendingFiles(fileList) {
+        // legacy stub - không dùng nữa, pushFiles trong closure lo hết
+    }
+
+    function renderAddImgPreview() {
+        if (_renderPreviewFn) _renderPreviewFn();
+    }
+
+    async function saveRoom() {
+        const result = addRoomForm.validate();
+        if (!result.isValid) return;
+
+        const fd   = addRoomForm.option("formData");
+        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+        const body  = new URLSearchParams();
+        body.append("Name",        fd.Name        || "");
+        body.append("Price",       fd.Price        ?? 0);
+        body.append("Area",        fd.Area         ?? 0);
+        body.append("Address",     fd.Address      || "");
+        body.append("Ward",        fd.Ward         || "");
+        body.append("City",        fd.City         || "");
+        body.append("Status",      fd.Status       ?? 0);
+        body.append("Description", fd.Description  || "");
+        body.append("__RequestVerificationToken", token);
+
+        try {
+            const res  = await fetch("/Room/Create", { method: "POST", body });
+            const json = await res.json();
+            if (json.success) {
+                // Upload ảnh pending nếu có
+                if (_pendingFiles.length > 0 && json.roomId) {
+                    const imgFd = new FormData();
+                    imgFd.append("__RequestVerificationToken", token);
+                    imgFd.append("roomId", json.roomId);
+                    for (let item of _pendingFiles) imgFd.append("files", item.file);
+                    await fetch("/Room/UploadImages", { method: "POST", body: imgFd });
+                    _pendingFiles = [];
+                }
+                addRoomPopup.hide();
+                loadRoomCards();
+                Swal.fire({ icon: "success", title: "Thành công", text: json.message, timer: 2000, showConfirmButton: false });
+            } else {
+                Swal.fire({ icon: "error", title: "Lỗi", html: json.message });
+            }
+        } catch (e) {
+            Swal.fire({ icon: "error", title: "Lỗi kết nối", text: e.message });
+        }
+    }
+</script>
+<div id="imgManagerPopup"></div>
+<div id="addRoomPopup"></div>
+<div id="slideshowPopup"></div>

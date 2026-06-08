@@ -1,0 +1,326 @@
+@model List<QuanLyPhongTro.Models.Contract>
+@{
+    ViewData["Title"] = "Báo cáo doanh thu";
+    int selYear   = (int)ViewBag.Year;
+    var years     = (List<int>)ViewBag.Years;
+    var monthly   = (decimal[])ViewBag.Monthly;
+    decimal totalRevenue = (decimal)ViewBag.TotalRevenue;
+    decimal avgMonthly   = (decimal)ViewBag.AvgMonthly;
+    int bestMonth        = (int)ViewBag.BestMonth;
+    string[] monthLabels = {"","T1","T2","T3","T4","T5","T6","T7","T8","T9","T10","T11","T12"};
+}
+
+<style>
+@@media print {
+    .no-print { display: none !important; }
+    .card { box-shadow: none !important; border: 1px solid #dee2e6 !important; }
+    body { background: #fff !important; }
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4 no-print">
+    <div>
+        <a asp-action="Index" class="btn btn-sm btn-outline-secondary me-2">
+            <i class="fas fa-arrow-left me-1"></i>Quay lại
+        </a>
+        <span class="h5 mb-0 fw-bold"><i class="fas fa-coins me-2 text-success"></i>Báo cáo doanh thu</span>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="ExportRevenue" asp-route-year="@selYear" class="btn btn-success btn-sm">
+            <i class="fas fa-file-excel me-1"></i>Xuất Excel
+        </a>
+        <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+            <i class="fas fa-print me-1"></i>In
+        </button>
+    </div>
+</div>
+
+<!-- Bộ lọc năm -->
+<div class="card mb-4 no-print">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Năm thống kê</label>
+                <select name="year" class="form-select">
+                    @foreach (var y in years)
+                    {
+                        if (y == selYear)
+                        {
+                            <option value="@y" selected>@y</option>
+                        }
+                        else
+                        {
+                            <option value="@y">@y</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter me-1"></i>Xem
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tiêu đề in -->
+<div class="text-center mb-4 d-none d-print-block">
+    <h3 class="fw-bold">BÁO CÁO DOANH THU NĂM @selYear</h3>
+    <small>Xuất ngày: @DateTime.Today.ToString("dd/MM/yyyy")</small>
+</div>
+
+<!-- Summary cards -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card text-center p-3">
+            <div class="text-success mb-1"><i class="fas fa-coins fa-2x"></i></div>
+            <h3 class="fw-bold text-success mb-0" style="font-size:1.1rem">@totalRevenue.ToString("N0")</h3>
+            <small class="text-muted">Tổng doanh thu (VNĐ)</small>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-center p-3">
+            <div class="text-info mb-1"><i class="fas fa-chart-line fa-2x"></i></div>
+            <h3 class="fw-bold text-info mb-0" style="font-size:1.1rem">@avgMonthly.ToString("N0")</h3>
+            <small class="text-muted">TB doanh thu/tháng (VNĐ)</small>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-center p-3">
+            <div class="text-warning mb-1"><i class="fas fa-star fa-2x"></i></div>
+            <h3 class="fw-bold text-warning mb-0">@(bestMonth > 0 ? "Tháng " + bestMonth : "—")</h3>
+            <small class="text-muted">Tháng doanh thu cao nhất</small>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-center p-3">
+            <div class="text-primary mb-1"><i class="fas fa-file-contract fa-2x"></i></div>
+            <h3 class="fw-bold text-primary mb-0">@ViewBag.TotalContracts</h3>
+            <small class="text-muted">Hợp đồng trong năm</small>
+        </div>
+    </div>
+</div>
+
+<!-- Biểu đồ + bảng tháng -->
+<div class="row g-3 mb-4">
+    <!-- Biểu đồ cột -->
+    <div class="col-md-8">
+        <div class="card h-100">
+            <div class="card-header"><i class="fas fa-chart-bar me-2 text-success"></i>Doanh thu theo tháng — Năm @selYear</div>
+            <div class="card-body" style="height:300px">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bảng tháng -->
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header"><i class="fas fa-table me-2"></i>Chi tiết từng tháng</div>
+            <div class="card-body p-0">
+                <table class="table table-sm table-hover mb-0" style="font-size:13px">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Tháng</th>
+                            <th class="text-end">Doanh thu (VNĐ)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int m = 1; m <= 12; m++)
+                        {
+                            var isBest = m == bestMonth;
+                            <tr class="@(isBest ? "table-warning fw-bold" : monthly[m] == 0 ? "text-muted" : "")">
+                                <td>
+                                    Tháng @m
+                                    @if (isBest) { <span class="badge bg-warning text-dark ms-1" style="font-size:9px">Cao nhất</span> }
+                                </td>
+                                <td class="text-end">
+                                    @if (monthly[m] > 0)
+                                    { @monthly[m].ToString("N0") }
+                                    else
+                                    { <span class="text-muted">—</span> }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot class="table-light fw-bold">
+                        <tr>
+                            <td>Tổng</td>
+                            <td class="text-end text-success">@totalRevenue.ToString("N0")</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top phòng doanh thu -->
+@{
+    var topRooms = (dynamic)ViewBag.TopRooms;
+}
+<div class="card mb-4">
+    <div class="card-header"><i class="fas fa-trophy me-2 text-warning"></i>Top phòng doanh thu cao nhất — @selYear</div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-bordered mb-0 align-middle" style="font-size:13px">
+                <thead class="table-success">
+                    <tr>
+                        <th style="width:40px" class="text-center">#</th>
+                        <th>Tên phòng</th>
+                        <th class="text-center">Số tháng có HĐ</th>
+                        <th class="text-end">Doanh thu (VNĐ)</th>
+                        <th style="width:200px">Tỉ trọng</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{int rank = 1;}
+                    @foreach (var r in topRooms)
+                    {
+                        decimal rev = r.Revenue;
+                        double pct  = totalRevenue > 0 ? (double)(rev / totalRevenue * 100) : 0;
+                        string rowCls = rank == 1 ? "table-warning" : rank == 2 ? "table-light" : rank == 3 ? "table-light" : "";
+                        <tr class="@rowCls">
+                            <td class="text-center fw-bold">
+                                @if (rank == 1) { <i class="fas fa-trophy text-warning"></i> }
+                                else if (rank == 2) { <i class="fas fa-medal text-secondary"></i> }
+                                else if (rank == 3) { <i class="fas fa-medal text-warning" style="opacity:.7"></i> }
+                                else { @rank }
+                            </td>
+                            <td class="fw-semibold">@r.Name</td>
+                            <td class="text-center">@r.Months tháng</td>
+                            <td class="text-end text-success fw-semibold">@rev.ToString("N0")</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height:8px">
+                                        <div class="progress-bar bg-success" style="width:@pct.ToString("0", System.Globalization.CultureInfo.InvariantCulture)%"></div>
+                                    </div>
+                                    <small class="text-muted">@pct.ToString("0.0")%</small>
+                                </div>
+                            </td>
+                        </tr>
+                        rank++;
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Chi tiết hợp đồng -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-list me-2"></i>Chi tiết tất cả hợp đồng năm @selYear</span>
+        <span class="badge bg-primary">@Model.Count hợp đồng</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-bordered mb-0 align-middle" style="font-size:13px">
+                <thead class="table-light">
+                    <tr>
+                        <th class="text-center">STT</th>
+                        <th>Phòng</th>
+                        <th>Người thuê</th>
+                        <th class="text-center">Ngày BĐ</th>
+                        <th class="text-center">Ngày KT</th>
+                        <th class="text-end">Giá/tháng</th>
+                        <th class="text-center">Tháng active</th>
+                        <th class="text-end">Doanh thu</th>
+                        <th class="text-center">Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{int stt = 1;}
+                    @foreach (var c in Model.OrderByDescending(c => c.MonthlyRent))
+                    {
+                        int months = 0;
+                        for (int m = 1; m <= 12; m++)
+                        {
+                            var fd = new DateTime(selYear, m, 1);
+                            var ld = fd.AddMonths(1).AddDays(-1);
+                            if (c.StartDate <= ld && c.EndDate >= fd) months++;
+                        }
+                        decimal contrib = c.MonthlyRent * months;
+                        <tr>
+                            <td class="text-center text-muted">@(stt++)</td>
+                            <td class="fw-semibold">@(c.Room?.Name ?? "—")</td>
+                            <td>@(c.User?.FullName ?? "—")</td>
+                            <td class="text-center">@c.StartDate.ToString("dd/MM/yyyy")</td>
+                            <td class="text-center">@c.EndDate.ToString("dd/MM/yyyy")</td>
+                            <td class="text-end">@c.MonthlyRent.ToString("N0")</td>
+                            <td class="text-center">@months</td>
+                            <td class="text-end fw-semibold text-success">@contrib.ToString("N0")</td>
+                            <td class="text-center">
+                                @if (c.IsActive)
+                                { <span class="badge bg-success">Hiệu lực</span> }
+                                else
+                                { <span class="badge bg-secondary">Kết thúc</span> }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+                @if (Model.Any())
+                {
+                    <tfoot class="table-light fw-bold">
+                        <tr>
+                            <td colspan="7" class="text-end">Tổng doanh thu năm @selYear:</td>
+                            <td class="text-end text-success">@totalRevenue.ToString("N0")</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                }
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var monthlyData = [@string.Join(",", Enumerable.Range(1, 12).Select(m => monthly[m].ToString(System.Globalization.CultureInfo.InvariantCulture)))];;
+    var maxVal = Math.max(...monthlyData);
+    var colors = monthlyData.map(v => v === maxVal && maxVal > 0 ? '#f9b115' : '#2eb85c');
+
+    new Chart(document.getElementById('revenueChart'), {
+        type: 'bar',
+        data: {
+            labels: ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'],
+            datasets: [{
+                label: 'Doanh thu (VNĐ)',
+                data: monthlyData,
+                backgroundColor: colors,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            return ctx.parsed.y.toLocaleString('vi-VN') + ' VNĐ';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(v) {
+                            if (v >= 1000000) return (v/1000000).toFixed(0) + 'tr';
+                            if (v >= 1000) return (v/1000).toFixed(0) + 'k';
+                            return v;
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>

@@ -1,0 +1,12 @@
+@{
+    ViewData["Title"] = "Access Denied";
+}
+
+<div class="text-center py-5">
+    <i class="fas fa-lock fa-5x text-danger mb-4"></i>
+    <h2>Không có quyền truy cập</h2>
+    <p class="text-muted">Bạn không có quyền vào trang này.</p>
+    <a asp-controller="Dashboard" asp-action="Index" class="btn btn-primary">
+        <i class="fas fa-home me-2"></i> Về trang chủ
+    </a>
+</div>

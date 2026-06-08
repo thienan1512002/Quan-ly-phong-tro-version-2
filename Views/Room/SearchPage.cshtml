@@ -1,0 +1,429 @@
+﻿@{
+    ViewData["Title"] = "Tìm kiếm phòng trống";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0"><i class="fas fa-search me-2 text-info"></i>Tìm kiếm phòng trọ</h4>
+</div>
+
+<!-- Bộ lọc DevExtreme -->
+<div class="card mb-3">
+    <div class="card-header"><i class="fas fa-filter me-2"></i>Bộ lọc</div>
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">Giá tối thiểu</label>
+                <div id="filterMinPrice"></div>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">Giá tối đa</label>
+                <div id="filterMaxPrice"></div>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">Sắp xếp</label>
+                <select id="searchSort" class="form-select" onchange="changeSSearchSort(this.value)">
+                    <option value="available">⬆ Phòng trống trước</option>
+                    <option value="price_asc">💰 Giá: Thấp → Cao</option>
+                    <option value="price_desc">💰 Giá: Cao → Thấp</option>
+                    <option value="area_asc">📐 Diện tích: Thấp → Cao</option>
+                    <option value="area_desc">📐 Diện tích: Cao → Thấp</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">Thành phố / Tỉnh</label>
+                <div id="filterCity"></div>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">Phường / Quận</label>
+                <div id="filterWard"></div>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button class="btn btn-info flex-fill" onclick="applyFilter()">
+                    <i class="fas fa-search me-1"></i> Tìm
+                </button>
+                <button class="btn btn-outline-secondary" onclick="clearFilter()" title="Xóa bộ lọc">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.room-img-wrap { height:180px;overflow:hidden;background:#f1f3f5;position:relative;display:flex;align-items:center;justify-content:center;color:#adb5bd;font-size:13px;text-align:center;border-bottom:1px solid #dee2e6; }
+.room-img-wrap.no-img { flex-direction:column;cursor:default; }
+.room-img-wrap:not(.no-img) { cursor:pointer; }
+.room-card-img { width:100%;height:180px;object-fit:cover;transition:transform .3s; }
+.room-img-wrap:not(.no-img):hover .room-card-img { transform:scale(1.06); }
+.img-count-badge { position:absolute;bottom:6px;right:8px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;padding:2px 8px;border-radius:12px;pointer-events:none; }
+.room-card { transition:box-shadow .2s; }
+.room-card:hover { box-shadow:0 6px 24px rgba(0,0,0,.13) !important; }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <span class="fw-semibold"><i class="fas fa-list me-2"></i>Danh sách phòng &nbsp;<span id="resultBadge" class="badge bg-primary">...</span></span>
+</div>
+<div class="row" id="searchCards">
+    <div class="col-12 text-center py-5 text-muted"><i class="fas fa-spinner fa-spin fa-2x"></i></div>
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script src="~/js/address-data.js"></script>
+    <script>
+        const _token=document.querySelector('input[name="__RequestVerificationToken"]').value;
+        let _currentData=[];
+        let _filterMinPrice=null, _filterMaxPrice=null, _filterCity=null, _filterWard=null;
+        let rentPopup=null, rentForm=null, _rentRoomId=null, _rentRoomName=null;
+        let _sSortMode = 'available';
+
+        function getSSearchSorted(rooms) {
+            const arr = [...rooms];
+            if (_sSortMode === 'price_asc')  return arr.sort(function(a,b){ return a.price - b.price; });
+            if (_sSortMode === 'price_desc') return arr.sort(function(a,b){ return b.price - a.price; });
+            if (_sSortMode === 'area_asc')   return arr.sort(function(a,b){ return a.area  - b.area;  });
+            if (_sSortMode === 'area_desc')  return arr.sort(function(a,b){ return b.area  - a.area;  });
+            return arr.sort(function(a,b){
+                const rank = {0:0, 2:1, 1:2};
+                return (rank[a.status] ?? 3) - (rank[b.status] ?? 3);
+            });
+        }
+
+        function changeSSearchSort(val) {
+            _sSortMode = val;
+            renderSearchCards(getSSearchSorted(_currentData));
+        }
+
+        $(function () {
+            // Khởi tạo widget bộ lọc
+            _filterMinPrice=$("#filterMinPrice").dxNumberBox({
+                placeholder: "VD: 1.000.000",
+                format: "#,##0 VNĐ",
+                min: 0,
+                step: 500000,
+                showClearButton: true
+            }).dxNumberBox("instance");
+
+            _filterMaxPrice=$("#filterMaxPrice").dxNumberBox({
+                placeholder: "VD: 5.000.000",
+                format: "#,##0 VNĐ",
+                min: 0,
+                step: 500000,
+                showClearButton: true
+            }).dxNumberBox("instance");
+
+            _filterCity=$("#filterCity").dxSelectBox({
+                dataSource: [],
+                valueExpr: "name",
+                displayExpr: "name",
+                placeholder: "-- Chọn tỉnh/thành phố --",
+                showClearButton: true,
+                searchEnabled: true,
+                onValueChanged: async function (e) {
+                    const item=e.component.option("selectedItem");
+                    if (item) {
+                        const wards=await fetchWards(item.code);
+                        _filterWard.option("dataSource", wards);
+                        _filterWard.option("value", null);
+                        _filterWard.option("disabled", false);
+                    } else {
+                        _filterWard.option("dataSource", []);
+                        _filterWard.option("value", null);
+                        _filterWard.option("disabled", true);
+                    }
+                }
+            }).dxSelectBox("instance");
+
+            _filterWard=$("#filterWard").dxSelectBox({
+                dataSource: [],
+                valueExpr: "name",
+                displayExpr: "name",
+                placeholder: "-- Chọn phường/xã --",
+                showClearButton: true,
+                searchEnabled: true,
+                disabled: true
+            }).dxSelectBox("instance");
+
+            // Load tỉnh/thành phố từ API
+            fetchProvinces().then(function (list) {
+                _filterCity.option("dataSource", list);
+            });
+
+            loadRooms();
+        });
+
+        async function loadRooms() {
+            const params=new URLSearchParams();
+            const minP=_filterMinPrice? _filterMinPrice.option("value"):null;
+            const maxP=_filterMaxPrice? _filterMaxPrice.option("value"):null;
+            const city=_filterCity? _filterCity.option("value"):null;
+            const ward=_filterWard? _filterWard.option("value"):null;
+            if (minP) params.append("minPrice", minP);
+            if (maxP) params.append("maxPrice", maxP);
+            if (city) params.append("city", city);
+            if (ward) params.append("ward", ward);
+
+            const res=await fetch("/Room/Search?"+params.toString());
+            _currentData=await res.json();
+            renderSearchCards(getSSearchSorted(_currentData));
+            document.getElementById("resultBadge").textContent=_currentData.length+" phòng";
+        }
+
+        function renderSearchCards(rooms) {
+            const wrap = document.getElementById('searchCards');
+            if (!rooms.length) {
+                wrap.innerHTML = '<div class="col-12 text-center text-muted py-5"><i class="fas fa-door-open fa-3x mb-3 d-block"></i>Không tìm thấy phòng nào.</div>';
+                return;
+            }
+            wrap.innerHTML = rooms.map(function(r) {
+                const mainImg  = r.images && r.images.find(function(i){ return i.isMain; });
+                const firstImg = r.images && r.images[0];
+                const dispImg  = mainImg || firstImg;
+                const imgUrl   = dispImg ? '/images/rooms/' + dispImg.fileName : null;
+                const hasImgs  = r.images && r.images.length > 0;
+                const statusLabel = r.status === 0 ? 'Trống' : r.status === 2 ? '⏳ Chờ duyệt' : 'Đã thuê';
+                const statusCls   = r.status === 0 ? 'success' : r.status === 2 ? 'warning text-dark' : 'danger';
+                const fullAddr = [r.address, r.ward, r.city].filter(Boolean).join(', ');
+                const safeName = (r.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
+                const imgHtml = hasImgs
+                    ? '<div class="room-img-wrap" onclick="openSearchSlideshow(' + r.id + ')">' +
+                      '<img src="' + imgUrl + '" class="room-card-img">' +
+                      (r.images.length > 1 ? '<span class="img-count-badge"><i class="fas fa-images"></i> ' + r.images.length + '</span>' : '') +
+                      '</div>'
+                    : '<div class="room-img-wrap no-img">' +
+                      '<i class="fas fa-image fa-2x mb-1 d-block"></i>Chưa có ảnh' +
+                      '</div>';
+
+                let actionHtml;
+                if (r.status === 0) {
+                    actionHtml = '<button class="btn btn-primary w-100" onclick="sendRentRequest(' + r.id + ',\''+safeName+'\')">' +
+                                 '<i class="fas fa-hand-point-right me-1"></i> Thuê phòng</button>';
+                } else if (r.status === 2) {
+                    actionHtml = '<span class="text-warning small fw-semibold">⏳ Đang có yêu cầu chờ duyệt</span>';
+                } else {
+                    actionHtml = '<span class="text-muted small">— Đã có người thuê</span>';
+                }
+
+                return '<div class="col-12 col-sm-6 col-md-4 col-xl-3 mb-4">' +
+                       '<div class="card h-100 shadow-sm room-card">' +
+                       imgHtml +
+                       '<div class="card-body p-3">' +
+                       '<div class="d-flex justify-content-between align-items-start mb-1">' +
+                       '<h6 class="mb-0 fw-bold text-truncate" style="max-width:165px">' + (r.name || '') + '</h6>' +
+                       '<span class="badge bg-' + statusCls + ' ms-1 flex-shrink-0">' + statusLabel + '</span>' +
+                       '</div>' +
+                       '<div class="text-success fw-semibold mb-1" style="font-size:14px">' + (r.price || 0).toLocaleString('vi-VN') + ' VNĐ/tháng</div>' +
+                       '<div class="text-muted" style="font-size:12px"><i class="fas fa-ruler-combined me-1"></i>' + r.area + ' m²</div>' +
+                       '<div class="text-muted text-truncate mt-1" style="font-size:12px" title="' + fullAddr + '"><i class="fas fa-map-marker-alt me-1"></i>' + (fullAddr || 'Chưa có địa chỉ') + '</div>' +
+                       '</div>' +
+                       '<div class="card-footer bg-transparent p-2 text-center">' + actionHtml + '</div>' +
+                       '</div></div>';
+            }).join('');
+        }
+
+        function applyFilter() {loadRooms();}
+
+        function clearFilter() {
+            if (_filterMinPrice) _filterMinPrice.option("value", null);
+            if (_filterMaxPrice) _filterMaxPrice.option("value", null);
+            if (_filterCity) {_filterCity.option("value", null);}
+            if (_filterWard) {_filterWard.option("items", []); _filterWard.option("value", null); _filterWard.option("disabled", true);}
+            loadRooms();
+        }
+
+        function sendRentRequest(roomId, roomName) {
+            _rentRoomId=roomId;
+            _rentRoomName=roomName;
+
+            if (!rentPopup) {
+                rentPopup=$("#rentRequestPopup").dxPopup({
+                    title: "",
+                    width: 500,
+                    height: "auto",
+                    dragEnabled: true,
+                    hideOnOutsideClick: false,
+                    showCloseButton: true,
+                    toolbarItems: [
+                        {
+                            widget: "dxButton", toolbar: "bottom", location: "after",
+                            options: {
+                                text: "Gửi yêu cầu", type: "default", icon: "send",
+                                onClick: submitRentRequest
+                            }
+                        },
+                        {
+                            widget: "dxButton", toolbar: "bottom", location: "after",
+                            options: {
+                                text: "Hủy", type: "normal",
+                                onClick: function () {rentPopup.hide();}
+                            }
+                        }
+                    ],
+                    contentTemplate: function (container) {
+                        const formDiv=$("<div style='padding:8px'>").appendTo(container);
+                        rentForm=formDiv.dxForm({
+                            labelMode: "floating",
+                            colCount: 2,
+                            items: [
+                                {
+                                    dataField: "desiredStartDate",
+                                    label: {text: "Ngày bắt đầu"},
+                                    editorType: "dxDateBox",
+                                    editorOptions: {
+                                        type: "date",
+                                        displayFormat: "dd/MM/yyyy",
+                                        pickerType: "calendar",
+                                        min: new Date()
+                                    },
+                                    validationRules: [{type: "required", message: "Vui lòng chọn ngày bắt đầu."}]
+                                },
+                                {
+                                    dataField: "desiredEndDate",
+                                    label: {text: "Ngày kết thúc"},
+                                    editorType: "dxDateBox",
+                                    editorOptions: {
+                                        type: "date",
+                                        displayFormat: "dd/MM/yyyy",
+                                        pickerType: "calendar"
+                                    },
+                                    validationRules: [
+                                        {type: "required", message: "Vui lòng chọn ngày kết thúc."},
+                                        {
+                                            type: "custom",
+                                            message: "Ngày kết thúc phải sau ngày bắt đầu.",
+                                            validationCallback: function (e) {
+                                                const sd=rentForm.getEditor("desiredStartDate").option("value");
+                                                return e.value&&sd&&new Date(e.value)>new Date(sd);
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    dataField: "note",
+                                    colSpan: 2,
+                                    label: {text: "Ghi chú"},
+                                    editorType: "dxTextArea",
+                                    editorOptions: {
+                                        placeholder: "Ghi chú thêm (không bắt buộc)",
+                                        height: 80,
+                                        autoResizeEnabled: true
+                                    }
+                                }
+                            ]
+                        }).dxForm("instance");
+                    }
+                }).dxPopup("instance");
+            } else {
+                const today=new Date();
+                const inSixMonths=new Date();
+                inSixMonths.setMonth(inSixMonths.getMonth()+6);
+                rentForm.resetValues();
+                rentForm.getEditor("desiredStartDate").option("value", today);
+                rentForm.getEditor("desiredEndDate").option("value", inSixMonths);
+                rentForm.resetValidation();
+            }
+
+            rentPopup.option("title", 'Thuê phòng "'+roomName+'"');
+            rentPopup.show();
+        }
+
+        function fmtDate(d) {
+            if (!d) return "";
+            const dt=new Date(d);
+            return dt.getFullYear()+"-"+
+                String(dt.getMonth()+1).padStart(2, "0")+"-"+
+                String(dt.getDate()).padStart(2, "0");
+        }
+
+        function submitRentRequest() {
+            const result=rentForm.validate();
+            if (!result.isValid) return;
+
+            const fd=rentForm.option("formData");
+            const frm=document.createElement("form");
+            frm.method="post";
+            frm.action="/RentalRequest/Create";
+
+            [
+                ["__RequestVerificationToken", _token],
+                ["roomId", _rentRoomId],
+                ["note", fd.note||""],
+                ["desiredStartDate", fmtDate(fd.desiredStartDate)],
+                ["desiredEndDate", fmtDate(fd.desiredEndDate)]
+            ].forEach(function (pair) {
+                var inp=document.createElement("input");
+                inp.type="hidden";
+                inp.name=pair[0];
+                inp.value=pair[1];
+                frm.appendChild(inp);
+            });
+
+            document.body.appendChild(frm);
+            frm.submit();
+        }
+
+        // SignalR callback
+        function reloadRoomGrid() { applyFilter(); }
+
+        // ===== SLIDESHOW =====
+        let _sSlideImages = [], _sSlideIdx = 0, _sSlidePopup = null;
+
+        function openSearchSlideshow(roomId) {
+            const room = _currentData.find(function(r) { return r.id === roomId; });
+            if (!room || !room.images || !room.images.length) return;
+            _sSlideImages = room.images;
+            const mainIdx = room.images.findIndex(function(i) { return i.isMain; });
+            _sSlideIdx = mainIdx >= 0 ? mainIdx : 0;
+            if (!_sSlidePopup) {
+                _sSlidePopup = $('#searchSlideshowPopup').dxPopup({
+                    title: '', width: 780, height: 'auto', maxHeight: '92vh',
+                    dragEnabled: true, hideOnOutsideClick: true, showCloseButton: true,
+                    contentTemplate: function(container) {
+                        container[0].innerHTML =
+                            '<div style="text-align:center">' +
+                            '<img id="sSlideImg" style="max-width:100%;max-height:62vh;border-radius:8px;display:block;margin:0 auto;object-fit:contain">' +
+                            '<div class="mt-3 d-flex align-items-center justify-content-center gap-3">' +
+                            '<button class="btn btn-outline-secondary" onclick="sSlideNav(-1)"><i class="fas fa-chevron-left"></i></button>' +
+                            '<span id="sSlideCounter" style="font-size:14px;min-width:55px;text-align:center;color:#6c757d"></span>' +
+                            '<button class="btn btn-outline-secondary" onclick="sSlideNav(1)"><i class="fas fa-chevron-right"></i></button>' +
+                            '</div>' +
+                            '<div id="sSlideDots" class="mt-2 d-flex justify-content-center gap-2 flex-wrap pb-1"></div>' +
+                            '</div>';
+                    }
+                }).dxPopup('instance');
+            }
+            _sSlidePopup.option('title', '🖼 ' + (room.name || 'Ảnh phòng'));
+            _sSlidePopup.show();
+            updateSSlide();
+        }
+
+        function updateSSlide() {
+            const img = _sSlideImages[_sSlideIdx];
+            const el  = document.getElementById('sSlideImg');
+            if (el) el.src = '/images/rooms/' + img.fileName;
+            const ctr = document.getElementById('sSlideCounter');
+            if (ctr) ctr.textContent = (_sSlideIdx + 1) + ' / ' + _sSlideImages.length;
+            const dots = document.getElementById('sSlideDots');
+            if (dots) {
+                dots.innerHTML = _sSlideImages.map(function(_, i) {
+                    return '<span onclick="jumpSSlide(' + i + ')" style="width:10px;height:10px;border-radius:50%;background:' +
+                        (i === _sSlideIdx ? '#0d6efd' : '#dee2e6') +
+                        ';display:inline-block;cursor:pointer;transition:background .2s"></span>';
+                }).join('');
+            }
+        }
+
+        function sSlideNav(delta) {
+            _sSlideIdx = (_sSlideIdx + delta + _sSlideImages.length) % _sSlideImages.length;
+            updateSSlide();
+        }
+
+        function jumpSSlide(i) { _sSlideIdx = i; updateSSlide(); }
+    </script>
+
+    <!-- dxPopup containers -->
+    <div id="rentRequestPopup"></div>
+    <div id="searchSlideshowPopup"></div>
+}

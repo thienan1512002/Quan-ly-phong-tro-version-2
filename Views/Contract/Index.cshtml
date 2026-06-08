@@ -1,0 +1,453 @@
+@model List<QuanLyPhongTro.Models.Contract>
+@{
+    ViewData["Title"] = "Quản lý hợp đồng";
+}
+
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0"><i class="fas fa-file-contract me-2 text-success"></i>Hợp đồng thuê phòng</h4>
+    <div class="d-flex gap-2">
+        <button id="btnSeed" class="btn btn-warning btn-sm" title="Seed 10.000 hợp đồng giả để test hiệu năng">
+            <i class="fas fa-database me-1"></i> Seed 10k Data
+        </button>
+        <a asp-action="Create" class="btn btn-success">
+            <i class="fas fa-plus me-1"></i> Tạo hợp đồng mới
+        </a>
+    </div>
+</div>
+
+<!-- Stat cards -->
+<div class="row g-3 mb-3">
+    <div class="col-6 col-md-3">
+        <div class="card h-100 stat-filter-card" id="cardTotal" role="button" title="Xem tất cả hợp đồng">
+            <div class="card-body d-flex align-items-center gap-3 py-3">
+                <div class="rounded-3 d-flex align-items-center justify-content-center text-white bg-primary"
+                     style="width:48px;height:48px;font-size:1.3rem;flex-shrink:0">
+                    <i class="fas fa-file-contract"></i>
+                </div>
+                <div>
+                    <div class="text-muted small">Tổng hợp đồng</div>
+                    <div class="h4 mb-0 fw-bold" id="statTotal">—</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card h-100 stat-filter-card" id="cardActive" role="button" title="Lọc hợp đồng đang hiệu lực">
+            <div class="card-body d-flex align-items-center gap-3 py-3">
+                <div class="rounded-3 d-flex align-items-center justify-content-center text-white bg-success"
+                     style="width:48px;height:48px;font-size:1.3rem;flex-shrink:0">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div>
+                    <div class="text-muted small">Đang hiệu lực</div>
+                    <div class="h4 mb-0 fw-bold text-success" id="statActive">—</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card h-100 stat-filter-card" id="cardEnded" role="button" title="Lọc hợp đồng đã kết thúc">
+            <div class="card-body d-flex align-items-center gap-3 py-3">
+                <div class="rounded-3 d-flex align-items-center justify-content-center text-white bg-secondary"
+                     style="width:48px;height:48px;font-size:1.3rem;flex-shrink:0">
+                    <i class="fas fa-stop-circle"></i>
+                </div>
+                <div>
+                    <div class="text-muted small">Đã kết thúc</div>
+                    <div class="h4 mb-0 fw-bold text-secondary" id="statEnded">—</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card h-100">
+            <div class="card-body d-flex align-items-center gap-3 py-3">
+                <div class="rounded-3 d-flex align-items-center justify-content-center text-white bg-warning"
+                     style="width:48px;height:48px;font-size:1.3rem;flex-shrink:0">
+                    <i class="fas fa-money-bill-wave"></i>
+                </div>
+                <div>
+                    <div class="text-muted small">Doanh thu/tháng</div>
+                    <div class="fw-bold text-warning" id="statRevenue" style="font-size:1rem">—</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bộ lọc phòng -->
+<div class="d-flex align-items-center gap-2 mb-2">
+    <span class="text-muted small"><i class="fas fa-door-open me-1"></i>Lọc phòng:</span>
+    <div id="roomFilterBox" style="width:280px"></div>
+    <button id="btnClearRoomFilter" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:12px;display:none" onclick="clearRoomFilter()">
+        <i class="fas fa-times me-1"></i>Xóa
+    </button>
+</div>
+
+<!-- Active filter banner -->
+<div id="activeFilterBar" style="display:none" class="d-flex align-items-center gap-2 mb-2 px-1">
+    <span class="text-muted small"><i class="fas fa-filter me-1"></i>Đang lọc:</span>
+    <span id="activeFilterLabel" class="badge rounded-pill" style="font-size:13px;padding:5px 12px"></span>
+    <button id="btnClearFilter" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:12px" onclick="clearStatFilter()">
+        <i class="fas fa-times me-1"></i>Xóa bộ lọc
+    </button>
+</div>
+
+<!-- DataGrid -->
+<div class="card">
+    <div class="card-body p-0">
+        <div id="contractGrid"></div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+<style>
+    .detail-panel { padding: 16px 20px; background: #f8fafc; }
+    .detail-card  { background: #fff; border-radius: 10px; border: 1px solid #e5e7eb; padding: 16px; }
+    .detail-card .dc-title { font-weight: 700; font-size: 13px; margin-bottom: 10px; display: flex; align-items: center; gap: 7px; }
+    .detail-row   { display: flex; flex-wrap: wrap; gap: 6px 20px; }
+    .detail-item  { font-size: 12px; color: #374151; min-width: 180px; }
+    .detail-item .lbl { color: #9ca3af; display: block; font-size: 11px; }
+    .stat-filter-card { cursor: pointer; transition: box-shadow .15s, border-color .15s; }
+    .stat-filter-card:hover { box-shadow: 0 0 0 2px #6c757d55; }
+    .stat-filter-card.active-card { box-shadow: 0 0 0 2.5px currentColor; outline: 2.5px solid; }
+    #cardTotal.active-card  { outline-color: #0d6efd; }
+    #cardActive.active-card { outline-color: #198754; }
+    #cardEnded.active-card  { outline-color: #6c757d; }
+    .stat-updating { opacity: .6; transition: opacity .15s; }
+    /* ── Info-group layout (master-detail) ── */
+    .ig-wrap            { padding: 18px 20px; }
+    .ig-row             { display:flex; gap:16px; flex-wrap:wrap; }
+    .ig-col             { flex:1; min-width:220px; }
+    .ig-box             { background:#f8fafc; border:1px solid #e5e7eb; border-radius:10px; padding:14px 18px; height:100%; }
+    .ig-title           { font-weight:700; font-size:13px; color:#374151; margin-bottom:12px; display:flex; align-items:center; gap:7px; border-bottom:1px solid #e5e7eb; padding-bottom:8px; }
+    .ig-grid            { display:grid; grid-template-columns:1fr 1fr; gap:7px 18px; }
+    .ig-item            { display:flex; flex-direction:column; gap:2px; }
+    .ig-item.full       { grid-column:span 2; }
+    .ig-lbl             { font-size:11px; color:#9ca3af; font-weight:500; text-transform:uppercase; letter-spacing:.4px; }
+    .ig-val             { font-size:13px; color:#1e293b; font-weight:500; }
+    .ig-val.muted       { color:#9ca3af; font-style:italic; }
+    .ig-val.money       { color:#16a34a; font-weight:700; }
+    .ig-val.danger      { color:#dc3545; font-weight:600; }
+    .ig-val.success     { color:#198754; font-weight:600; }
+</style>
+<script>
+    const _token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+    function setActiveCard(id, label, badgeClass) {
+        document.querySelectorAll('.stat-filter-card').forEach(c => c.classList.remove('active-card'));
+        var bar   = document.getElementById('activeFilterBar');
+        var lbl   = document.getElementById('activeFilterLabel');
+        if (id) {
+            document.getElementById(id).classList.add('active-card');
+            lbl.textContent = label;
+            lbl.className   = 'badge rounded-pill ' + badgeClass;
+            bar.style.display = '';
+        } else {
+            lbl.textContent   = '';
+            bar.style.display = 'none';
+        }
+    }
+
+    function clearStatFilter() {
+        setActiveCard(null);
+        // Giữ lại room filter nếu đang chọn
+        const roomVal = $("#roomFilterBox").dxSelectBox("instance").option("value");
+        if (roomVal) {
+            $("#contractGrid").dxDataGrid("instance").filter(["roomName", "=", roomVal]);
+        } else {
+            $("#contractGrid").dxDataGrid("instance").clearFilter();
+        }
+    }
+
+    function clearRoomFilter() {
+        $("#roomFilterBox").dxSelectBox("instance").option("value", null);
+        $("#btnClearRoomFilter").hide();
+        const grid = $("#contractGrid").dxDataGrid("instance");
+        grid.clearFilter();
+    }
+
+    // Tính thời hạn theo calendar months + ngày dư (từ chuỗi dd/MM/yyyy)
+    function calcDur(startStr, endStr, fallbackDays) {
+        try {
+            const p = s => { const [d,m,y] = s.split('/'); return new Date(+y, +m-1, +d); };
+            const s = p(startStr), e = p(endStr);
+            let months = (e.getFullYear() - s.getFullYear()) * 12 + (e.getMonth() - s.getMonth());
+            // Điều chỉnh nếu ngày cuối < ngày đầu trong tháng
+            const adj = new Date(s.getFullYear(), s.getMonth() + months, s.getDate());
+            let remDays = Math.round((e - adj) / 86400000);
+            if (remDays < 0) { months--; remDays += new Date(e.getFullYear(), e.getMonth() + 1, 0).getDate(); }
+            if (months > 0) return months + ' tháng' + (remDays > 0 ? ' ' + remDays + ' ngày' : '');
+            return (fallbackDays || remDays) + ' ngày';
+        } catch { return fallbackDays + ' ngày'; }
+    }
+
+    $(function () {
+        // ── Room filter dropdown ──────────────────────────────────
+        $.getJSON('/Room/GetAll').then(function (rooms) {
+            const roomNames = [...new Set(rooms.map(r => r.name).filter(Boolean))].sort();
+            $("#roomFilterBox").dxSelectBox({
+                items: roomNames,
+                placeholder: "Tất cả phòng...",
+                showClearButton: true,
+                searchEnabled: true,
+                onValueChanged: function (e) {
+                    const grid = $("#contractGrid").dxDataGrid("instance");
+                    setActiveCard(null); // bỏ stat filter khi chọn room
+                    if (e.value) {
+                        $("#btnClearRoomFilter").show();
+                        grid.filter(["roomName", "=", e.value]);
+                    } else {
+                        $("#btnClearRoomFilter").hide();
+                        grid.clearFilter();
+                    }
+                }
+            });
+        });
+
+        const store = new DevExpress.data.CustomStore({
+            key: 'id',
+            load(loadOptions) {
+                const params = {
+                    skip: loadOptions.skip  ?? 0,
+                    take: loadOptions.take  ?? 10,
+                    requireTotalCount: true
+                };
+                if (loadOptions.filter) params.filter = JSON.stringify(loadOptions.filter);
+                if (loadOptions.sort)   params.sort   = JSON.stringify(loadOptions.sort);
+
+                return $.getJSON('/Contract/GetAll', params).then(function (result) {
+                    document.getElementById('statTotal').textContent   = result.summary[0];
+                    document.getElementById('statActive').textContent  = result.summary[1];
+                    document.getElementById('statEnded').textContent   = result.summary[0] - result.summary[1];
+                    document.getElementById('statRevenue').textContent =
+                        parseFloat(result.summary[2]).toLocaleString('vi-VN') + ' VNĐ';
+                    return { data: result.data, totalCount: result.totalCount };
+                });
+            }
+        });
+
+        $("#contractGrid").dxDataGrid({
+            dataSource: store,
+            remoteOperations: { filtering: true, sorting: true, paging: true },
+            columns: [
+                    {
+                        caption: "STT", width: 55, alignment: "center", allowSorting: false,
+                        cellTemplate(container, opt) {
+                            $(container).text(opt.component.pageIndex() * opt.component.pageSize() + opt.rowIndex + 1);
+                        }
+                    },
+                    {
+                        dataField: "roomName", caption: "Phòng", minWidth: 160,
+                        cellTemplate(container, opt) {
+                            $('<div class="fw-semibold">').text(opt.value).appendTo(container);
+                            $('<div class="text-muted" style="font-size:11px">').html('<i class="fas fa-map-marker-alt me-1"></i>' + opt.data.roomAddress).appendTo(container);
+                        }
+                    },
+                    {
+                        dataField: "userName", caption: "Người thuê", minWidth: 140,
+                        cellTemplate(container, opt) {
+                            $('<div class="fw-semibold">').text(opt.value).appendTo(container);
+                        }
+                    },
+                    {
+                        caption: "Liên hệ", minWidth: 185,
+                        cellTemplate(container, opt) {
+                            $('<div style="font-size:12px">').html('<i class="fas fa-envelope me-1 text-muted"></i>' + opt.data.userEmail).appendTo(container);
+                            if (opt.data.userPhone) {
+                                $('<div style="font-size:12px">').html('<i class="fas fa-phone me-1 text-muted"></i>' + opt.data.userPhone).appendTo(container);
+                            } else {
+                                $('<div style="font-size:11px;color:#d1d5db">').html('<i class="fas fa-phone me-1"></i>Chưa cập nhật SĐT').appendTo(container);
+                            }
+                        }
+                    },
+                    {
+                        caption: "Thời gian thuê", width: 210,
+                        cellTemplate(container, opt) {
+                            const dur    = calcDur(opt.data.startDate, opt.data.endDate, opt.data.durationDays);
+                            $('<div>').html(
+                                '<span class="me-2"><i class="fas fa-play-circle text-success me-1"></i>' + opt.data.startDate + '</span>' +
+                                '<span><i class="fas fa-stop-circle text-danger me-1"></i>' + opt.data.endDate + '</span>'
+                            ).appendTo(container);
+                            $('<div class="text-muted" style="font-size:11px">').html('<i class="fas fa-clock me-1"></i>' + dur).appendTo(container);
+                        }
+                    },
+                    {
+                        dataField: "monthlyRent", caption: "Tiền thuê/tháng", width: 165,
+                        cellTemplate(container, opt) {
+                            $('<span class="text-success fw-bold">').text(opt.data.monthlyRentFormatted).appendTo(container);
+                        }
+                    },
+                    {
+                        dataField: "isActive", caption: "Trạng thái", width: 140,
+                        sortIndex: 0, sortOrder: 'desc',
+                        cellTemplate(container, opt) {
+                            const cls  = opt.data.isActive ? 'bg-success' : 'bg-secondary';
+                            const icon = opt.data.isActive ? '✅' : '⏹';
+                            $('<span>').addClass('badge ' + cls).text(icon + ' ' + opt.data.statusText).appendTo(container);
+                        }
+                    },
+                    {
+                        caption: "Thao tác", width: 170, alignment: "center",
+                        cellTemplate(container, opt) {
+                            const wrap = $('<div style="display:flex;align-items:center;justify-content:center;gap:4px">');
+                            $('<a class="btn btn-sm btn-info">')
+                                .attr('href', '/Contract/Details/' + opt.data.id)
+                                .html('<i class="fas fa-eye me-1"></i>Chi tiết')
+                                .appendTo(wrap);
+                            if (opt.data.isActive) {
+                                $('<button class="btn btn-sm btn-danger">')
+                                    .html('<i class="fas fa-stop me-1"></i>Kết thúc')
+                                    .on('click', () => {
+                                        Swal.fire({
+                                            title: 'Kết thúc hợp đồng?',
+                                            text: 'Phòng sẽ trở về trạng thái trống.',
+                                            imageUrl: window._swalConfirmImg, imageWidth: 80, imageHeight: 80,
+                                            showCancelButton: true,
+                                            confirmButtonColor: '#dc3545',
+                                            confirmButtonText: 'Kết thúc',
+                                            cancelButtonText: 'Hủy'
+                                        }).then(r => { if (r.isConfirmed) terminateContract(opt.data.id); });
+                                    })
+                                    .appendTo(wrap);
+                            }
+                            wrap.appendTo(container);
+                        }
+                    }
+                ],
+                /* ── Master-detail expand ── */
+                masterDetail: {
+                    enabled: true,
+                    template(container, opt) {
+                        const d = opt.data;
+                        const dur     = calcDur(d.startDate, d.endDate, d.durationDays);
+                        const roomStBadge = d.roomStatus === 'Trống'
+                            ? '<span class="badge bg-success"              style="font-size:11px">✔ Trống</span>'
+                            : d.roomStatus === 'Đang chờ duyệt'
+                            ? '<span class="badge bg-warning text-dark"    style="font-size:11px">⏳ Đang chờ duyệt</span>'
+                            : '<span class="badge bg-danger"               style="font-size:11px">● Đang thuê</span>';
+                        const contractStBadge = d.isActive
+                            ? '<span class="badge bg-success" style="font-size:11px">✔ Đang hiệu lực</span>'
+                            : '<span class="badge bg-secondary" style="font-size:11px">✖ Đã kết thúc</span>';
+                        const ii = (lbl, v, full) =>
+                            `<div class="ig-item${full?' full':''}"><span class="ig-lbl">${lbl}</span><span class="ig-val${!v?' muted':''}">${v||'—'}</span></div>`;
+                        $('<div class="ig-wrap">').html(`
+                            <div class="ig-row">
+                                <div class="ig-col">
+                                    <div class="ig-box">
+                                        <div class="ig-title">🏠 Thông tin phòng</div>
+                                        <div class="ig-grid">
+                                            ${ii('Tên phòng',    d.roomName)}
+                                            ${ii('Diện tích',    d.roomArea ? d.roomArea + ' m²' : null)}
+                                            ${ii('Địa chỉ',      d.roomAddress, true)}
+                                            ${ii('Giá niêm yết', d.roomPriceFormatted)}
+                                            <div class="ig-item"><span class="ig-lbl">Trạng thái phòng</span>${roomStBadge}</div>
+                                            ${d.roomDesc ? ii('Mô tả', d.roomDesc, true) : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="ig-col">
+                                    <div class="ig-box">
+                                        <div class="ig-title">👤 Thông tin người thuê</div>
+                                        <div class="ig-grid">
+                                            ${ii('Họ tên',         d.userName)}
+                                            ${ii('Tài khoản',      d.userUsername)}
+                                            ${ii('Email',          d.userEmail, true)}
+                                            ${ii('Số điện thoại',  d.userPhone)}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="ig-col">
+                                    <div class="ig-box">
+                                        <div class="ig-title">📄 Thông tin hợp đồng</div>
+                                        <div class="ig-grid">
+                                            ${ii('Ngày bắt đầu',   d.startDate)}
+                                            ${ii('Ngày kết thúc',  d.endDate)}
+                                            ${ii('Thời hạn',       dur, false)}
+                                            <div class="ig-item"><span class="ig-lbl">Giá thuê / tháng</span><span class="ig-val money">${d.monthlyRentFormatted||'—'}</span></div>
+                                            ${ii('Ngày tạo',       d.createdAt)}
+                                            <div class="ig-item"><span class="ig-lbl">Trạng thái HĐ</span>${contractStBadge}</div>
+                                            ${d.note ? ii('Ghi chú', d.note, true) : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).appendTo(container);
+                    }
+                },
+                height: "auto",
+                paging:  { pageSize: 30 },
+                pager:   { showPageSizeSelector: true, allowedPageSizes: [10, 20, 30, 50], showInfo: true, infoText: "Trang {0}/{1} ({2} bản ghi)" },
+                searchPanel: { visible: true, placeholder: "Tìm kiếm hợp đồng..." },
+                headerFilter: { visible: true },
+                filterRow:    { visible: true },
+                showBorders:  true,
+                rowAlternationEnabled: true,
+                noDataText: "Chưa có hợp đồng nào"
+            });
+
+            // ── Stat card click → filter grid ──────────────────────
+            document.getElementById('cardTotal').addEventListener('click', function () {
+                clearStatFilter();
+            });
+
+            document.getElementById('cardActive').addEventListener('click', function () {
+                setActiveCard('cardActive', '✅ Đang hiệu lực', 'bg-success');
+                $("#contractGrid").dxDataGrid("instance").filter(['isActive', '=', true]);
+            });
+
+            document.getElementById('cardEnded').addEventListener('click', function () {
+                setActiveCard('cardEnded', '⏹ Đã kết thúc', 'bg-secondary');
+                $("#contractGrid").dxDataGrid("instance").filter(['isActive', '=', false]);
+            });
+        });
+   
+
+    async function terminateContract(id) {
+        const body = new URLSearchParams({ __RequestVerificationToken: _token });
+        const res  = await fetch('/Contract/Terminate/' + id, { method: 'POST', body });
+        if (res.ok || res.redirected) {
+            const grid = $("#contractGrid").dxDataGrid("instance");
+            grid.getDataSource().reload();
+            Swal.fire({ icon: 'success', title: 'Thành công', text: 'Hợp đồng đã được kết thúc. Phòng trở về trạng thái trống.', timer: 2500, showConfirmButton: false });
+        } else {
+            Swal.fire({ icon: 'error', title: 'Lỗi', text: 'Có lỗi xảy ra!' });
+        }
+    }
+
+    document.getElementById('btnSeed').addEventListener('click', async function () {
+        const confirmed = await Swal.fire({
+            title: 'Seed 10k hợp đồng?',
+            text: 'Seed ~10.000 hợp đồng giả vào DB để test hiệu năng (chỉ seed thêm nếu DB chưa đủ 10k).',
+            imageUrl: window._swalConfirmImg, imageWidth: 80, imageHeight: 80,
+            showCancelButton: true,
+            confirmButtonColor: '#ffc107',
+            confirmButtonText: 'Seed',
+            cancelButtonText: 'Hủy'
+        });
+        if (!confirmed.isConfirmed) return;
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang seed...';
+        try {
+            const body = new URLSearchParams({ __RequestVerificationToken: _token });
+            const res  = await fetch('/Contract/SeedData', { method: 'POST', body });
+            const text = await res.text();
+            let json;
+            try { json = JSON.parse(text); }
+            catch { Swal.fire({ icon: 'error', title: 'Lỗi server', text: text.substring(0, 300) }); return; }
+            Swal.fire({ icon: json.success ? 'success' : 'error', title: json.success ? 'Thành công' : 'Lỗi', text: json.message });
+            if (json.success) $("#contractGrid").dxDataGrid("instance").getDataSource().reload();
+        } catch (e) {
+            Swal.fire({ icon: 'error', title: 'Lỗi', text: e.message });
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-database me-1"></i> Seed 10k Data';
+        }
+    });
+</script>
+}
+
