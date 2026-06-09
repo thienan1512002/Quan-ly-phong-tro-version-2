@@ -319,15 +319,95 @@
                 const today=new Date();
                 const inSixMonths=new Date();
                 inSixMonths.setMonth(inSixMonths.getMonth()+6);
-                rentForm.resetValues();
+                rentForm = null;
+                 rentPopup=$("#rentRequestPopup").dxPopup({
+                    title: "",
+                    width: 500,
+                    height: "auto",
+                    dragEnabled: true,
+                    hideOnOutsideClick: false,
+                    showCloseButton: true,
+                    toolbarItems: [
+                        {
+                            widget: "dxButton", toolbar: "bottom", location: "after",
+                            options: {
+                                text: "Gửi yêu cầu", type: "default", icon: "send",
+                                onClick: submitRentRequest
+                            }
+                        },
+                        {
+                            widget: "dxButton", toolbar: "bottom", location: "after",
+                            options: {
+                                text: "Hủy", type: "normal",
+                                onClick: function () {rentPopup.hide();}
+                            }
+                        }
+                    ],
+                    contentTemplate: function (container) {
+                        const formDiv=$("<div style='padding:8px'>").appendTo(container);
+                        rentForm=formDiv.dxForm({
+                            labelMode: "floating",
+                            colCount: 2,
+                            items: [
+                                {
+                                    dataField: "desiredStartDate",
+                                    label: {text: "Ngày bắt đầu"},
+                                    editorType: "dxDateBox",
+                                    editorOptions: {
+                                        type: "date",
+                                        displayFormat: "dd/MM/yyyy",
+                                        pickerType: "calendar",
+                                        min: new Date()
+                                    },
+                                    validationRules: [{type: "required", message: "Vui lòng chọn ngày bắt đầu."}]
+                                },
+                                {
+                                    dataField: "desiredEndDate",
+                                    label: {text: "Ngày kết thúc"},
+                                    editorType: "dxDateBox",
+                                    editorOptions: {
+                                        type: "date",
+                                        displayFormat: "dd/MM/yyyy",
+                                        pickerType: "calendar"
+                                    },
+                                    validationRules: [
+                                        {type: "required", message: "Vui lòng chọn ngày kết thúc."},
+                                        {
+                                            type: "custom",
+                                            message: "Ngày kết thúc phải sau ngày bắt đầu.",
+                                            validationCallback: function (e) {
+                                                const sd=rentForm.getEditor("desiredStartDate").option("value");
+                                                return e.value&&sd&&new Date(e.value)>new Date(sd);
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    dataField: "note",
+                                    colSpan: 2,
+                                    label: {text: "Ghi chú"},
+                                    editorType: "dxTextArea",
+                                    editorOptions: {
+                                        placeholder: "Ghi chú thêm (không bắt buộc)",
+                                        height: 80,
+                                        autoResizeEnabled: true
+                                    }
+                                }
+                            ]
+                        }).dxForm("instance");
+                    }
+                }).dxPopup("instance");
+                @* rentForm.resetValues();
                 rentForm.getEditor("desiredStartDate").option("value", today);
                 rentForm.getEditor("desiredEndDate").option("value", inSixMonths);
-                rentForm.resetValidation();
+                rentForm.resetValidation(); *@
             }
 
             rentPopup.option("title", 'Thuê phòng "'+roomName+'"');
             rentPopup.show();
         }
+
+        
 
         function fmtDate(d) {
             if (!d) return "";
