@@ -7,7 +7,8 @@
     <!-- CoreUI CSS -->
     <link href="https://unpkg.com/@@coreui/coreui@5.4.0/dist/css/coreui.min.css" rel="stylesheet" />
     <!-- DevExtreme CSS -->
-    <link rel="stylesheet" type="text/css" href="https://cdn3.devexpress.com/jslib/23.2.5/css/dx.material.blue.light.compact.css" />
+    <link rel="stylesheet" type="text/css"
+          href="https://cdn3.devexpress.com/jslib/23.2.5/css/dx.material.blue.light.compact.css" />
     <!-- Font Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
     <!-- jQuery (required by DevExtreme) -->
@@ -21,185 +22,244 @@
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        window._swalConfirmImg = 'https://cdn1.iconfinder.com/data/icons/interface-145/32/question-user_interface-ui-question_mark-website-help-element-512.png';
+        window._swalConfirmImg='https://cdn1.iconfinder.com/data/icons/interface-145/32/question-user_interface-ui-question_mark-website-help-element-512.png';
     </script>
     <style>
-        body { background-color: #f8f9fa; }
-        .sidebar { min-height: 100vh; background: #3c4b64; }
-        .sidebar .nav-link { color: #b8bec7; padding: 10px 20px; }
-        .sidebar .nav-link:hover, .sidebar .nav-link.active { color: #fff; background: rgba(255,255,255,0.1); }
-        .sidebar .nav-link i { margin-right: 8px; width: 20px; }
-        .sidebar-brand { padding: 20px; color: #fff; font-size: 1.2rem; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .main-content { padding: 20px; }
-        .card { border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-radius: 8px; }
-        .card-header { background: #fff; border-bottom: 1px solid #eee; font-weight: 600; }
-        #notificationArea { position: fixed; top: 20px; right: 20px; z-index: 9999; }
+        body {
+        background-color: #f8f9fa;
+        }
+
+        .sidebar {
+        min-height: 100vh;
+        background: #3c4b64;
+        }
+
+        .sidebar .nav-link {
+        color: #b8bec7;
+        padding: 10px 20px;
+        }
+
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar .nav-link i {
+        margin-right: 8px;
+        width: 20px;
+        }
+
+        .sidebar-brand {
+        padding: 20px;
+        color: #fff;
+        font-size: 1.2rem;
+        font-weight: bold;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .main-content {
+        padding: 20px;
+        }
+
+        .card {
+        border: none;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border-radius: 8px;
+        }
+
+        .card-header {
+        background: #fff;
+        border-bottom: 1px solid #eee;
+        font-weight: 600;
+        }
+
+        #notificationArea {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        }
+
         /* Fix: DevExtreme material theme overrides Bootstrap button text color */
-        .btn-primary, .btn-secondary, .btn-success, .btn-danger,
-        .btn-warning, .btn-info, .btn-dark {
-            color: #fff !important;
+        .btn-primary,
+        .btn-secondary,
+        .btn-success,
+        .btn-danger,
+        .btn-warning,
+        .btn-info,
+        .btn-dark {
+        color: #fff !important;
         }
-        .btn-outline-primary:hover, .btn-outline-secondary:hover,
-        .btn-outline-success:hover, .btn-outline-danger:hover,
-        .btn-outline-warning:hover, .btn-outline-info:hover {
-            color: #fff !important;
+
+        .btn-outline-primary:hover,
+        .btn-outline-secondary:hover,
+        .btn-outline-success:hover,
+        .btn-outline-danger:hover,
+        .btn-outline-warning:hover,
+        .btn-outline-info:hover {
+        color: #fff !important;
         }
-        .btn-warning { color: #fff !important; }
+
+        .btn-warning {
+        color: #fff !important;
+        }
     </style>
 </head>
 <body class="dx-viewport">
-@if (User.Identity?.IsAuthenticated == true)
-{
-    <div class="d-flex">
-        <!-- Sidebar -->
-        <nav class="sidebar d-none d-md-flex flex-column" style="width:250px; min-width:250px;">
-            <div class="sidebar-brand">
-                <i class="fas fa-home"></i> Phòng Trọ
-            </div>
-            <ul class="nav flex-column mt-2">
-                <li class="nav-item">
-                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")"
-                       asp-controller="Dashboard" asp-action="Index">
-                        <i class="fas fa-tachometer-alt"></i> Dashboard
-                    </a>
-                </li>
-                @if (User.IsInRole("Admin"))
-                {
-                <li class="nav-item">
-                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Room" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")"
-                       asp-controller="Room" asp-action="Index">
-                        <i class="fas fa-door-open"></i> Quản lý phòng
-                    </a>
-                </li>
-                }
-                <li class="nav-item">
-                    <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "SearchPage" ? "active" : "")"
-                       asp-controller="Room" asp-action="SearchPage">
-                        <i class="fas fa-search"></i> Tìm kiếm phòng
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "RentalRequest" ? "active" : "")"
-                       asp-controller="RentalRequest" asp-action="Index">
-                        <i class="fas fa-clipboard-list"></i> Yêu cầu thuê
-                    </a>
-                </li>
-                @if (User.IsInRole("Admin"))
-                {
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <div class="d-flex">
+            <!-- Sidebar -->
+            <nav class="sidebar d-none d-md-flex flex-column" style="width:250px; min-width:250px;">
+                <div class="sidebar-brand">
+                    <i class="fas fa-home"></i> Phòng Trọ
+                </div>
+                <ul class="nav flex-column mt-2">
                     <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Contract" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")"
-                           asp-controller="Contract" asp-action="Index">
-                            <i class="fas fa-file-contract"></i> Hợp đồng
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")"
+                           asp-controller="Dashboard" asp-action="Index">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </li>
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Room" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")"
+                               asp-controller="Room" asp-action="Index">
+                                <i class="fas fa-door-open"></i> Quản lý phòng
+                            </a>
+                        </li>
+                    }
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "SearchPage" ? "active" : "")"
+                           asp-controller="Room" asp-action="SearchPage">
+                            <i class="fas fa-search"></i> Tìm kiếm phòng
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "CalendarView" ? "active" : "")"
-                           asp-controller="Contract" asp-action="CalendarView">
-                            <i class="fas fa-calendar-alt"></i> Lịch thuê phòng
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "RentalRequest" ? "active" : "")"
+                           asp-controller="RentalRequest" asp-action="Index">
+                            <i class="fas fa-clipboard-list"></i> Yêu cầu thuê
                         </a>
+                    </li>
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Contract" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")"
+                               asp-controller="Contract" asp-action="Index">
+                                <i class="fas fa-file-contract"></i> Hợp đồng
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "CalendarView" ? "active" : "")"
+                               asp-controller="Contract" asp-action="CalendarView">
+                                <i class="fas fa-calendar-alt"></i> Lịch thuê phòng
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Report" ? "active" : "")"
+                               asp-controller="Report" asp-action="Index">
+                                <i class="fas fa-chart-line"></i> Báo cáo
+                            </a>
+                        </li>
+                    }
+                    <li class="nav-item mt-3 border-top border-secondary pt-2">
+                        <span class="nav-link text-muted" style="font-size:0.85rem;">
+                            <i class="fas fa-user"></i> @User.FindFirst("FullName")?.Value
+                            <span
+                            class="badge bg-info ms-1">@User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value</span>
+                        </span>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Report" ? "active" : "")"
-                           asp-controller="Report" asp-action="Index">
-                            <i class="fas fa-chart-line"></i> Báo cáo
-                        </a>
+                        <form asp-controller="Account" asp-action="Logout" method="post">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="nav-link btn btn-link text-start w-100" style="color:#b8bec7;">
+                                <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                            </button>
+                        </form>
                     </li>
-                }
-                <li class="nav-item mt-3 border-top border-secondary pt-2">
-                    <span class="nav-link text-muted" style="font-size:0.85rem;">
-                        <i class="fas fa-user"></i> @User.FindFirst("FullName")?.Value
-                        <span class="badge bg-info ms-1">@User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value</span>
-                    </span>
-                </li>
-                <li class="nav-item">
-                    <form asp-controller="Account" asp-action="Logout" method="post">
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="nav-link btn btn-link text-start w-100" style="color:#b8bec7;">
-                            <i class="fas fa-sign-out-alt"></i> Đăng xuất
-                        </button>
-                    </form>
-                </li>
-            </ul>
-        </nav>
+                </ul>
+            </nav>
 
-        <!-- Main Content -->
-        <div class="flex-grow-1">
-            <div class="main-content">
-                @if (TempData["Success"] != null)
-                {
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <i class="fas fa-check-circle me-2"></i> @TempData["Success"]
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                }
-                @if (TempData["Error"] != null)
-                {
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i class="fas fa-exclamation-circle me-2"></i> @TempData["Error"]
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                }
-                @RenderBody()
+            <!-- Main Content -->
+            <div class="flex-grow-1">
+                <div class="main-content">
+                    @if (TempData["Success"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle me-2"></i> @TempData["Success"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i> @TempData["Error"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+                    @RenderBody()
+                </div>
             </div>
         </div>
-    </div>
-}
-else
-{
-    @RenderBody()
-}
+    }
+    else
+    {
+        @RenderBody()
+    }
 
-<!-- Notification Area (SignalR Toast) -->
-<div id="notificationArea"></div>
-
+    <!-- Notification Area (SignalR Toast) -->
+    <div id="notificationArea"></div>
 
 
-@if (User.Identity?.IsAuthenticated == true)
-{
-    <script>
-        // =====================================================
-        // SIGNALR CLIENT SETUP
-        // =====================================================
-        const connection = new signalR.HubConnectionBuilder()
+
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <script>
+            // =====================================================
+            // SIGNALR CLIENT SETUP
+            // =====================================================
+            const connection=new signalR.HubConnectionBuilder()
             .withUrl("/notificationHub")
             .withAutomaticReconnect()
             .build();
 
-        // Event: yêu cầu reload danh sách phòng
-        connection.on("reloadRooms", function () {
-            if (typeof reloadRoomGrid === "function") {
-                reloadRoomGrid(); // gọi hàm reload nếu đang ở trang phòng
+            // Event: yêu cầu reload danh sách phòng
+            connection.on("reloadRooms", function () {
+            if (typeof reloadRoomGrid==="function") {
+            reloadRoomGrid(); // gọi hàm reload nếu đang ở trang phòng
             }
-        });
+            });
 
-        // Event: có yêu cầu thuê mới
-        connection.on("newRequest", function (roomName, userName) {
-            showToast("Yêu cầu mới!", userName + " muốn thuê phòng <b>" + roomName + "</b>");
-        });
+            // Event: có yêu cầu thuê mới
+            connection.on("newRequest", function (roomName, userName) {
+            showToast("Yêu cầu mới!", userName+" muốn thuê phòng <b>"+roomName+"</b>");
+            });
 
-        connection.start()
+            connection.start()
             .then(() => console.log("✅ SignalR connected"))
             .catch(err => console.error("❌ SignalR error:", err));
 
-        // Hiển thị toast notification đẹp
-        function showToast(title, message) {
-            const id = "t" + Date.now();
-            const el = document.createElement("div");
-            el.id = id;
-            el.className = "toast show mb-2";
-            el.style.minWidth = "280px";
-            el.innerHTML = `
-                <div class="toast-header bg-primary text-white">
-                    <strong class="me-auto"><i class="fas fa-bell me-1"></i> ${title}</strong>
-                    <button type="button" class="btn-close btn-close-white" onclick="this.closest('.toast').remove()"></button>
-                </div>
-                <div class="toast-body">${message}</div>`;
+            // Hiển thị toast notification đẹp
+            function showToast(title, message) {
+            const id="t"+Date.now();
+            const el=document.createElement("div");
+            el.id=id;
+            el.className="toast show mb-2";
+            el.style.minWidth="280px";
+            el.innerHTML=`
+            <div class="toast-header bg-primary text-white">
+            <strong class="me-auto"><i class="fas fa-bell me-1"></i> ${title}</strong>
+            <button type="button" class="btn-close btn-close-white" onclick="this.closest('.toast').remove()"></button>
+            </div>
+            <div class="toast-body">${message}</div>`;
             document.getElementById("notificationArea").appendChild(el);
             setTimeout(() => el.remove(), 5000);
-        }
-    </script>
-}
+            }
+        </script>
+    }
 
-@await RenderSectionAsync("Scripts", required: false)
+    @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

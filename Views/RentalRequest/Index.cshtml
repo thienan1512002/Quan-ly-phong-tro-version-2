@@ -34,7 +34,7 @@
     });
     if (_isAdmin) columns.push({dataField: "userFullName", caption: "Người gửi", width: 140});
     columns.push({dataField: "roomName", caption: "Tên phòng", width: 130});
-    columns.push({dataField: "roomAddress", caption: "Địa chỉ"});
+    columns.push({dataField: "roomAddress", caption: "Địa chỉ",width:240});
     columns.push({
         dataField: "note", caption: "Ghi chú", width: 160,
         customizeText: e => e.value||"—"
@@ -43,7 +43,7 @@
     columns.push({
         dataField: "statusText",
         caption: "Trạng thái",
-        width: 140,
+        width: 500,
         cellTemplate(container, opt) {
             const map={
                 "Chờ duyệt": ["bg-warning text-dark", "⏳"],
@@ -123,6 +123,7 @@
                 load: () => $.getJSON('/RentalRequest/GetAll')
             },
             columns,
+            width: "100%",
             paging: {pageSize: 10},
             pager: {
                 showPageSizeSelector: true, allowedPageSizes: [5, 10, 20],
