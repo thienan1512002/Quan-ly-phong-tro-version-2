@@ -12,7 +12,7 @@
     <div class="card-body">
         <div class="row g-3 align-items-end">
             <div class="col-md-2">
-                <label class="form-label fw-semibold">Giá tối thiểu</label>
+                <label class="form-label fw-semibold" style="color:red">Giá tối thiểu</label>
                 <div id="filterMinPrice"></div>
             </div>
             <div class="col-md-2">
@@ -214,7 +214,7 @@
                        '<h6 class="mb-0 fw-bold text-truncate" style="max-width:165px">' + (r.name || '') + '</h6>' +
                        '<span class="badge bg-' + statusCls + ' ms-1 flex-shrink-0">' + statusLabel + '</span>' +
                        '</div>' +
-                       '<div class="text-success fw-semibold mb-1" style="font-size:14px">' + (r.price || 0).toLocaleString('vi-VN') + ' VNĐ/tháng</div>' +
+                       '<div class="text-danger fw-semibold mb-1" style="font-size:14px">' + (r.price || 0).toLocaleString('vi-VN') + ' VNĐ/tháng</div>' +
                        '<div class="text-muted" style="font-size:12px"><i class="fas fa-ruler-combined me-1"></i>' + r.area + ' m²</div>' +
                        '<div class="text-muted text-truncate mt-1" style="font-size:12px" title="' + fullAddr + '"><i class="fas fa-map-marker-alt me-1"></i>' + (fullAddr || 'Chưa có địa chỉ') + '</div>' +
                        '</div>' +
