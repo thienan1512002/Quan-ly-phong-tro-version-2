@@ -1,4 +1,4 @@
-# StayFlow - Hệ thống quản lý phòng trọ
+# StayFlow - Hệ thống quản lý phòng trọ-Update
 
 StayFlow là ứng dụng web quản lý phòng trọ dành cho chủ trọ và người thuê. Hệ thống hỗ trợ quản lý phòng, hình ảnh, yêu cầu thuê, hợp đồng, lịch thuê, bảo trì, thông báo, điện nước và báo cáo doanh thu.
 
