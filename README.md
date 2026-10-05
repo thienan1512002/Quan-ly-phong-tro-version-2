@@ -2,7 +2,7 @@
 
 StayFlow là ứng dụng web quản lý phòng trọ dành cho chủ trọ và người thuê. Hệ thống hỗ trợ quản lý phòng, hình ảnh, yêu cầu thuê, hợp đồng, lịch thuê, bảo trì, thông báo, điện nước và báo cáo doanh thu.
 
-Project được xây dựng bằng ASP.NET Core MVC trên .NET 8, Entity Framework Core theo hướng Code First và SQL Server/LocalDB.
+Dự án được xây dựng bằng ASP.NET Core MVC trên .NET 8, Entity Framework Core theo hướng Code First và SQL Server/LocalDB.
 
 ## Mục lục
 
