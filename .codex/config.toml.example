@@ -1,0 +1,20 @@
+﻿# Copy/merge relevant settings into the Codex config used by your environment.
+# Do not commit credentials here.
+
+# Project guidance:
+# - Keep workspace write access scoped to this repository.
+# - Require approval for sensitive commands.
+# - Configure MCP servers with secrets from environment variables or secure stores.
+
+# Example logical MCP entries (adapt to the exact Codex/MCP runtime in use):
+#
+# [mcp_servers.openai_docs]
+# url = "https://developers.openai.com/mcp"
+#
+# [mcp_servers.github]
+# command = "..."
+#
+# [mcp_servers.sql_prod]
+# command = "..."
+# env = { DB_MODE = "READ_ONLY" }
+

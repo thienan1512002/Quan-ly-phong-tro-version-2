@@ -7,37 +7,37 @@
 @if (!Model.IsUser)
 {
     <!-- ===================== ADMIN DASHBOARD ===================== -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="mb-0"><i class="fas fa-tachometer-alt me-2 text-primary"></i>Dashboard</h4>
+    <div class="page-heading">
+        <h4><i class="fas fa-tachometer-alt me-2 text-primary"></i>Dashboard</h4>
         <small class="text-muted">Tổng quan hệ thống quản lý phòng trọ</small>
     </div>
 
     <!-- Thống kê tổng quan - 4 cards -->
     <div class="row g-3 mb-4">
         <div class="col-6 col-md-3">
-            <div class="card text-center p-3">
-                <div class="text-primary mb-2"><i class="fas fa-door-open fa-2x"></i></div>
+            <div class="card text-center p-3 metric-card">
+                <div class="metric-icon text-primary"><i class="fas fa-door-open fa-lg"></i></div>
                 <h2 class="mb-0 fw-bold text-primary">@Model.TotalRooms</h2>
                 <small class="text-muted">Tổng số phòng</small>
             </div>
         </div>
         <div class="col-6 col-md-3">
-            <div class="card text-center p-3">
-                <div class="text-success mb-2"><i class="fas fa-check-circle fa-2x"></i></div>
+            <div class="card text-center p-3 metric-card">
+                <div class="metric-icon text-success"><i class="fas fa-check-circle fa-lg"></i></div>
                 <h2 class="mb-0 fw-bold text-success">@Model.EmptyRooms</h2>
                 <small class="text-muted">Phòng trống</small>
             </div>
         </div>
         <div class="col-6 col-md-3">
-            <div class="card text-center p-3">
-                <div class="text-danger mb-2"><i class="fas fa-home fa-2x"></i></div>
+            <div class="card text-center p-3 metric-card">
+                <div class="metric-icon text-danger"><i class="fas fa-home fa-lg"></i></div>
                 <h2 class="mb-0 fw-bold text-danger">@Model.OccupiedRooms</h2>
                 <small class="text-muted">Đã có người thuê</small>
             </div>
         </div>
         <div class="col-6 col-md-3">
-            <div class="card text-center p-3">
-                <div class="text-info mb-2"><i class="fas fa-file-contract fa-2x"></i></div>
+            <div class="card text-center p-3 metric-card">
+                <div class="metric-icon text-info"><i class="fas fa-file-contract fa-lg"></i></div>
                 <h2 class="mb-0 fw-bold text-info">@Model.ActiveContracts</h2>
                 <small class="text-muted">Hợp đồng hiệu lực</small>
             </div>
@@ -84,12 +84,12 @@
                 <div class="card-body">
                     <div class="row g-2">
                         <div class="col-6">
-                            <a asp-controller="Room" asp-action="Index" class="btn btn-outline-primary w-100 py-3">
+                            <a asp-controller="Room" asp-action="Index" class="btn btn-outline-primary w-100 quick-action">
                                 <i class="fas fa-door-open d-block fa-2x mb-1"></i>Danh sách phòng
                             </a>
                         </div>
                         <div class="col-6">
-                            <a asp-controller="RentalRequest" asp-action="Index" class="btn btn-outline-warning w-100 py-3">
+                            <a asp-controller="RentalRequest" asp-action="Index" class="btn btn-outline-warning w-100 quick-action">
                                 <i class="fas fa-clipboard-list d-block fa-2x mb-1"></i>Yêu cầu thuê
                                 @if (Model.PendingRequests > 0)
                                 {
@@ -98,12 +98,12 @@
                             </a>
                         </div>
                         <div class="col-6">
-                            <a asp-controller="Contract" asp-action="Index" class="btn btn-outline-success w-100 py-3">
+                            <a asp-controller="Contract" asp-action="Index" class="btn btn-outline-success w-100 quick-action">
                                 <i class="fas fa-file-contract d-block fa-2x mb-1"></i>Hợp đồng
                             </a>
                         </div>
                         <div class="col-6">
-                            <a asp-controller="Contract" asp-action="CalendarView" class="btn btn-outline-info w-100 py-3">
+                            <a asp-controller="Contract" asp-action="CalendarView" class="btn btn-outline-info w-100 quick-action">
                                 <i class="fas fa-calendar-alt d-block fa-2x mb-1"></i>Lịch hợp đồng
                             </a>
                         </div>
@@ -133,7 +133,7 @@
         </div>
         <div class="col-md-4">
             <div class="card">
-                <div class="card-header"><i class="fas fa-chart-bar me-2 text-danger"></i>HỢ ĐồNG sắp hết hạn</div>
+                <div class="card-header"><i class="fas fa-chart-bar me-2 text-danger"></i>Hợp đồng sắp hết hạn</div>
                 <div class="card-body d-flex justify-content-center align-items-center" style="height:240px">
                     <canvas id="expiringChart"></canvas>
                 </div>
@@ -190,8 +190,8 @@ else
     var pctLeft   = contract != null ? Math.Max(0, Math.Min(100, (double)daysLeft / totalDays * 100)) : 0;
     var daysLeftCls = daysLeft <= 30 ? "danger" : daysLeft <= 90 ? "warning" : "success";
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="mb-0"><i class="fas fa-tachometer-alt me-2 text-primary"></i>Trang chủ</h4>
+    <div class="page-heading">
+        <h4><i class="fas fa-tachometer-alt me-2 text-primary"></i>Trang chủ</h4>
         <small class="text-muted">Xin chào, @User.Identity!.Name!</small>
     </div>
 
@@ -199,16 +199,16 @@ else
     <div class="row g-3 mb-4">
         <!-- Hợp đồng -->
         <div class="col-6 col-md-3">
-            <div class="card text-center p-3 h-100">
+            <div class="card text-center p-3 h-100 metric-card">
                 @if (contract != null)
                 {
-                    <div class="text-success mb-2"><i class="fas fa-file-contract fa-2x"></i></div>
+                    <div class="metric-icon text-success"><i class="fas fa-file-contract fa-lg"></i></div>
                     <h2 class="mb-0 fw-bold text-success">1</h2>
                     <small class="text-muted">Hợp đồng hiệu lực</small>
                 }
                 else
                 {
-                    <div class="text-secondary mb-2"><i class="fas fa-file-contract fa-2x"></i></div>
+                    <div class="metric-icon text-secondary"><i class="fas fa-file-contract fa-lg"></i></div>
                     <h2 class="mb-0 fw-bold text-secondary">0</h2>
                     <small class="text-muted">Hợp đồng hiệu lực</small>
                 }
@@ -217,16 +217,16 @@ else
 
         <!-- Ngày còn lại -->
         <div class="col-6 col-md-3">
-            <div class="card text-center p-3 h-100">
+            <div class="card text-center p-3 h-100 metric-card">
                 @if (contract != null)
                 {
-                    <div class="text-@daysLeftCls mb-2"><i class="fas fa-calendar-check fa-2x"></i></div>
+                    <div class="metric-icon text-@daysLeftCls"><i class="fas fa-calendar-check fa-lg"></i></div>
                     <h2 class="mb-0 fw-bold text-@daysLeftCls">@daysLeft</h2>
                     <small class="text-muted">Ngày còn lại</small>
                 }
                 else
                 {
-                    <div class="text-secondary mb-2"><i class="fas fa-calendar-times fa-2x"></i></div>
+                    <div class="metric-icon text-secondary"><i class="fas fa-calendar-times fa-lg"></i></div>
                     <h2 class="mb-0 fw-bold text-secondary">—</h2>
                     <small class="text-muted">Ngày còn lại</small>
                 }
@@ -235,8 +235,8 @@ else
 
         <!-- Yêu cầu chờ -->
         <div class="col-6 col-md-3">
-            <div class="card text-center p-3 h-100">
-                <div class="text-warning mb-2"><i class="fas fa-hourglass-half fa-2x"></i></div>
+            <div class="card text-center p-3 h-100 metric-card">
+                <div class="metric-icon text-warning"><i class="fas fa-hourglass-half fa-lg"></i></div>
                 <h2 class="mb-0 fw-bold text-warning">@Model.PendingRequests</h2>
                 <small class="text-muted">Yêu cầu chờ duyệt</small>
             </div>
@@ -244,8 +244,8 @@ else
 
         <!-- Phòng trống -->
         <div class="col-6 col-md-3">
-            <div class="card text-center p-3 h-100">
-                <div class="text-info mb-2"><i class="fas fa-door-open fa-2x"></i></div>
+            <div class="card text-center p-3 h-100 metric-card">
+                <div class="metric-icon text-info"><i class="fas fa-door-open fa-lg"></i></div>
                 <h2 class="mb-0 fw-bold text-info">@Model.EmptyRooms</h2>
                 <small class="text-muted">Phòng đang trống</small>
             </div>
@@ -365,12 +365,12 @@ else
                 <div class="card-body">
                     <div class="row g-2">
                         <div class="col-6">
-                            <a asp-controller="Room" asp-action="SearchPage" class="btn btn-outline-info w-100 py-3">
+                            <a asp-controller="Room" asp-action="SearchPage" class="btn btn-outline-info w-100 quick-action">
                                 <i class="fas fa-search d-block fa-2x mb-1"></i>Tìm phòng
                             </a>
                         </div>
                         <div class="col-6">
-                            <a asp-controller="RentalRequest" asp-action="Index" class="btn btn-outline-warning w-100 py-3">
+                            <a asp-controller="RentalRequest" asp-action="Index" class="btn btn-outline-warning w-100 quick-action">
                                 <i class="fas fa-clipboard-list d-block fa-2x mb-1"></i>Yêu cầu của tôi
                                 @if (Model.PendingRequests > 0)
                                 {
@@ -382,7 +382,7 @@ else
                         {
                             <div class="col-12">
                                 <a asp-controller="Contract" asp-action="Details" asp-route-id="@contract.Id"
-                                   class="btn btn-outline-success w-100 py-3">
+                                   class="btn btn-outline-success w-100 quick-action">
                                     <i class="fas fa-file-alt d-block fa-2x mb-1"></i>Xem chi tiết hợp đồng
                                 </a>
                             </div>

@@ -1,0 +1,174 @@
+@model QuanLyPhongTro.Models.ViewModels.MaintenanceIndexViewModel
+@using QuanLyPhongTro.Models
+@{
+    ViewData["Title"] = Model.IsAdmin ? "Quản lý sửa chữa" : "Yêu cầu sửa chữa";
+}
+
+<div class="page-heading d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1"><i class="fas fa-screwdriver-wrench text-warning me-2"></i>@ViewData["Title"]</h2>
+        <p class="text-muted mb-0">Theo dõi sự cố và tiến độ xử lý tại phòng trọ.</p>
+    </div>
+</div>
+
+@if (!Model.IsAdmin)
+{
+    <div class="card mb-4">
+        <div class="card-header"><i class="fas fa-circle-plus me-2 text-primary"></i>Gửi yêu cầu mới</div>
+        <div class="card-body">
+            @if (Model.ActiveContract == null)
+            {
+                <div class="alert alert-info mb-0">
+                    Bạn chưa có hợp đồng đang hiệu lực nên chưa thể gửi yêu cầu sửa chữa.
+                </div>
+            }
+            else
+            {
+                <div class="small text-muted mb-3">
+                    Phòng tiếp nhận: <strong class="text-dark">@Model.ActiveContract.Room?.Name</strong>
+                    — @Model.ActiveContract.Room?.Address
+                </div>
+                <form asp-action="Create" method="post">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="CreateModel.Title" class="form-label"></label>
+                            <input asp-for="CreateModel.Title" class="form-control" placeholder="Ví dụ: Vòi nước bị rò rỉ" />
+                            <span asp-validation-for="CreateModel.Title" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="CreateModel.Category" class="form-label"></label>
+                            <select asp-for="CreateModel.Category" class="form-select">
+                                <option value="">-- Chọn hạng mục --</option>
+                                <option>Điện</option>
+                                <option>Nước</option>
+                                <option>Thiết bị</option>
+                                <option>Cửa / khóa</option>
+                                <option>Tường / trần</option>
+                                <option>Khác</option>
+                            </select>
+                            <span asp-validation-for="CreateModel.Category" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="CreateModel.Priority" class="form-label"></label>
+                            <select asp-for="CreateModel.Priority" class="form-select">
+                                <option value="0">Thấp</option>
+                                <option value="1">Bình thường</option>
+                                <option value="2">Cao</option>
+                                <option value="3">Khẩn cấp</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="CreateModel.Description" class="form-label"></label>
+                            <textarea asp-for="CreateModel.Description" class="form-control" rows="3"
+                                      placeholder="Mô tả vị trí, tình trạng và thời điểm phát hiện..."></textarea>
+                            <span asp-validation-for="CreateModel.Description" class="text-danger small"></span>
+                        </div>
+                        <div class="col-12 text-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-1"></i> Gửi yêu cầu
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            }
+        </div>
+    </div>
+}
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-list-check me-2"></i>@(Model.IsAdmin ? "Tất cả yêu cầu" : "Lịch sử yêu cầu")</span>
+        <span class="badge bg-secondary">@Model.Requests.Count yêu cầu</span>
+    </div>
+    <div class="card-body p-0">
+        @if (!Model.Requests.Any())
+        {
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-toolbox fa-3x mb-3 d-block opacity-50"></i>
+                Chưa có yêu cầu sửa chữa nào.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            @if (Model.IsAdmin) { <th>Người thuê</th> }
+                            <th>Phòng / sự cố</th>
+                            <th>Mức độ</th>
+                            <th>Ngày gửi</th>
+                            <th>Trạng thái</th>
+                            <th>Phản hồi chủ trọ</th>
+                            @if (Model.IsAdmin) { <th style="min-width:290px">Xử lý</th> }
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var item in Model.Requests)
+                    {
+                        var statusInfo = item.Status switch
+                        {
+                            MaintenanceStatus.Moi => ("warning text-dark", "Mới gửi"),
+                            MaintenanceStatus.DangXuLy => ("info", "Đang xử lý"),
+                            MaintenanceStatus.HoanThanh => ("success", "Hoàn thành"),
+                            MaintenanceStatus.TuChoi => ("secondary", "Từ chối"),
+                            _ => ("light text-dark", item.Status.ToString())
+                        };
+                        var priorityInfo = item.Priority switch
+                        {
+                            MaintenancePriority.KhanCap => ("danger", "Khẩn cấp"),
+                            MaintenancePriority.Cao => ("warning text-dark", "Cao"),
+                            MaintenancePriority.Thap => ("secondary", "Thấp"),
+                            _ => ("primary", "Bình thường")
+                        };
+                        <tr>
+                            @if (Model.IsAdmin)
+                            {
+                                <td><strong>@item.User?.FullName</strong><div class="small text-muted">@item.User?.PhoneNumber</div></td>
+                            }
+                            <td>
+                                <strong>@item.Title</strong>
+                                <div class="small text-muted">@item.Room?.Name · @item.Category</div>
+                                <div class="small mt-1">@item.Description</div>
+                            </td>
+                            <td><span class="badge bg-@priorityInfo.Item1">@priorityInfo.Item2</span></td>
+                            <td class="text-nowrap">@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td><span class="badge bg-@statusInfo.Item1">@statusInfo.Item2</span></td>
+                            <td>@(item.AdminNote ?? "—")</td>
+                            @if (Model.IsAdmin)
+                            {
+                                <td>
+                                    <form asp-action="UpdateStatus" method="post" class="row g-2">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <div class="col-5">
+                                            <select name="status" class="form-select form-select-sm">
+                                                <option value="0" selected="@(item.Status == MaintenanceStatus.Moi)">Mới gửi</option>
+                                                <option value="1" selected="@(item.Status == MaintenanceStatus.DangXuLy)">Đang xử lý</option>
+                                                <option value="2" selected="@(item.Status == MaintenanceStatus.HoanThanh)">Hoàn thành</option>
+                                                <option value="3" selected="@(item.Status == MaintenanceStatus.TuChoi)">Từ chối</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-7">
+                                            <input name="adminNote" value="@item.AdminNote" class="form-control form-control-sm" placeholder="Ghi chú phản hồi" />
+                                        </div>
+                                        <div class="col-12 text-end">
+                                            <button class="btn btn-sm btn-primary" type="submit">Lưu cập nhật</button>
+                                        </div>
+                                    </form>
+                                </td>
+                            }
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

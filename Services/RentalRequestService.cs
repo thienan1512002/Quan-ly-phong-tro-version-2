@@ -58,7 +58,8 @@ namespace QuanLyPhongTro.Services
         /// Tạo yêu cầu thuê mới
         /// </summary>
         public async Task<bool> CreateAsync(int roomId, int userId, string? note,
-            DateTime? desiredStartDate = null, DateTime? desiredEndDate = null)
+            DateTime? desiredStartDate = null, DateTime? desiredEndDate = null,
+            decimal? deposit = null)
         {
             // Kiểm tra phòng có trống không
             var room = await _context.Rooms.FindAsync(roomId);
@@ -78,6 +79,7 @@ namespace QuanLyPhongTro.Services
                 Note = note,
                 DesiredStartDate = desiredStartDate,
                 DesiredEndDate = desiredEndDate,
+                Deposit = deposit,
                 Status = RequestStatus.ChoDuyet,
                 CreatedAt = DateTime.Now
             };

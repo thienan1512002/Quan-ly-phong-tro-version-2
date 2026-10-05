@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace QuanLyPhongTro.Models
 {
@@ -43,6 +44,10 @@ namespace QuanLyPhongTro.Models
         // Thời hạn thuê mong muốn (user chọn khi gửi yêu cầu)
         public DateTime? DesiredStartDate { get; set; }
         public DateTime? DesiredEndDate { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        [Display(Name = "Tiền cọc đề xuất")]
+        public decimal? Deposit { get; set; }
 
         // Admin ghi chú khi duyệt/từ chối
         [MaxLength(500)]

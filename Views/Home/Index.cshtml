@@ -1,8 +1,52 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@{
+    ViewData["Title"] = "StayFlow";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<section class="home-hero">
+    <div class="home-hero-content">
+        <div class="home-kicker"><i class="fas fa-layer-group me-2"></i>StayFlow workspace</div>
+        <h1>Vận hành phòng thuê mạch lạc từ tìm phòng đến hợp đồng.</h1>
+        <p>
+            Một giao diện quản trị nhẹ, rõ và hiện đại cho việc theo dõi phòng, duyệt yêu cầu,
+            gia hạn hợp đồng và xem số liệu vận hành hằng tháng.
+        </p>
+        <div class="d-flex gap-2 flex-wrap">
+            <a asp-controller="Account" asp-action="Login" class="btn btn-primary">
+                <i class="fas fa-arrow-right-to-bracket me-2"></i>Đăng nhập
+            </a>
+            <a asp-controller="Account" asp-action="Register" class="btn btn-outline-primary">
+                <i class="fas fa-user-plus me-2"></i>Tạo tài khoản
+            </a>
+        </div>
+    </div>
+</section>
+
+<div class="row g-3 mt-3">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="metric-icon text-primary mx-0"><i class="fas fa-door-open"></i></div>
+                <h5 class="fw-bold">Không gian thuê</h5>
+                <p class="text-muted mb-0">Quản lý thông tin phòng, ảnh, địa chỉ, giá thuê và trạng thái khả dụng.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="metric-icon text-success mx-0"><i class="fas fa-file-signature"></i></div>
+                <h5 class="fw-bold">Hợp đồng</h5>
+                <p class="text-muted mb-0">Tạo mới, gia hạn, kết thúc và theo dõi vòng đời hợp đồng trong một luồng.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="metric-icon text-warning mx-0"><i class="fas fa-chart-column"></i></div>
+                <h5 class="fw-bold">Dữ liệu vận hành</h5>
+                <p class="text-muted mb-0">Xem tình trạng thuê, doanh thu và báo cáo theo kỳ để nắm tình hình nhanh.</p>
+            </div>
+        </div>
+    </div>
 </div>

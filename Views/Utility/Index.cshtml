@@ -1,0 +1,141 @@
+@model QuanLyPhongTro.Models.ViewModels.UtilityIndexViewModel
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Điện nước theo tháng";
+}
+
+<div class="page-heading d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1"><i class="fas fa-chart-column text-primary me-2"></i>Điện nước theo tháng</h2>
+        <p class="text-muted mb-0">Theo dõi lượng điện (kWh) và nước (m³) đã tiêu thụ.</p>
+    </div>
+    @if (Model.IsAdmin && Model.Rooms.Any())
+    {
+        <form asp-action="Index" method="get" class="d-flex align-items-center gap-2">
+            <label class="text-nowrap fw-semibold">Xem phòng</label>
+            <select name="roomId" asp-items="Model.Rooms" class="form-select" onchange="this.form.submit()"></select>
+        </form>
+    }
+</div>
+
+@if (!Model.SelectedRoomId.HasValue)
+{
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        @(Model.IsAdmin ? "Chưa có phòng để nhập số liệu." : "Bạn chưa có hợp đồng phòng đang hiệu lực.")
+    </div>
+}
+else
+{
+    <div class="alert alert-light border d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-door-open me-2 text-primary"></i>Đang xem dữ liệu của <strong>@Model.RoomName</strong></span>
+        <span class="text-muted small">Tối đa 12 tháng gần nhất trên biểu đồ</span>
+    </div>
+
+    @if (Model.IsAdmin)
+    {
+        <div class="card mb-4">
+            <div class="card-header"><i class="fas fa-pen-to-square me-2 text-primary"></i>Nhập / cập nhật số liệu tháng</div>
+            <div class="card-body">
+                <form asp-action="Save" method="post">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+                    <input asp-for="Input.RoomId" type="hidden" />
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-2">
+                            <label asp-for="Input.BillingMonth" class="form-label"></label>
+                            <input asp-for="Input.BillingMonth" type="month" asp-format="{0:yyyy-MM}" class="form-control" />
+                            <span asp-validation-for="Input.BillingMonth" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-2">
+                            <label asp-for="Input.ElectricityUsage" class="form-label"></label>
+                            <input asp-for="Input.ElectricityUsage" class="form-control" min="0" step="0.01" />
+                            <span asp-validation-for="Input.ElectricityUsage" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-2">
+                            <label asp-for="Input.WaterUsage" class="form-label"></label>
+                            <input asp-for="Input.WaterUsage" class="form-control" min="0" step="0.01" />
+                            <span asp-validation-for="Input.WaterUsage" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="Input.Note" class="form-label"></label>
+                            <input asp-for="Input.Note" class="form-control" placeholder="Ghi chú (không bắt buộc)" />
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-primary w-100" type="submit"><i class="fas fa-save me-1"></i> Lưu số liệu</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    }
+
+    <div class="card mb-4">
+        <div class="card-header"><i class="fas fa-chart-line me-2"></i>Biểu đồ tiêu thụ</div>
+        <div class="card-body" style="height:380px">
+            @if (Model.Readings.Any())
+            {
+                <canvas id="utilityChart"></canvas>
+            }
+            else
+            {
+                <div class="h-100 d-flex flex-column align-items-center justify-content-center text-muted">
+                    <i class="fas fa-chart-area fa-3x mb-3 opacity-50"></i>Chưa có số liệu điện nước cho phòng này.
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><i class="fas fa-table me-2"></i>Lịch sử ghi nhận</div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light"><tr><th>Tháng</th><th>Điện tiêu thụ</th><th>Nước tiêu thụ</th><th>Ghi chú</th><th>Cập nhật lúc</th></tr></thead>
+                    <tbody>
+                    @if (!Model.Readings.Any())
+                    {
+                        <tr><td colspan="5" class="text-center text-muted py-4">Chưa có dữ liệu.</td></tr>
+                    }
+                    @foreach (var item in Model.Readings)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@item.BillingMonth.ToString("MM/yyyy")</td>
+                            <td><span class="text-warning fw-bold">@item.ElectricityUsage.ToString("N2")</span> kWh</td>
+                            <td><span class="text-primary fw-bold">@item.WaterUsage.ToString("N2")</span> m³</td>
+                            <td>@(item.Note ?? "—")</td>
+                            <td class="text-muted small">@item.UpdatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    @if (Model.Readings.Any())
+    {
+        <script>
+            new Chart(document.getElementById('utilityChart'), {
+                type: 'bar',
+                data: {
+                    labels: @Html.Raw(JsonSerializer.Serialize(Model.ChartLabels)),
+                    datasets: [
+                        { label: 'Điện (kWh)', data: @Html.Raw(JsonSerializer.Serialize(Model.ElectricityData)), backgroundColor: 'rgba(249, 177, 21, .72)', borderColor: '#d99b08', borderWidth: 1, borderRadius: 5 },
+                        { label: 'Nước (m³)', data: @Html.Raw(JsonSerializer.Serialize(Model.WaterData)), backgroundColor: 'rgba(31, 122, 90, .68)', borderColor: '#1f7a5a', borderWidth: 1, borderRadius: 5 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: { y: { beginAtZero: true, title: { display: true, text: 'Mức tiêu thụ' } } },
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        </script>
+    }
+}

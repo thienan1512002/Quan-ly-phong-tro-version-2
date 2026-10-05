@@ -62,6 +62,7 @@ namespace QuanLyPhongTro.Controllers
                 RoomPrice = r.Room?.Price ?? 0,
                 r.Note,
                 r.AdminNote,
+                r.Deposit,
                 DesiredStartDate = r.DesiredStartDate.HasValue ? r.DesiredStartDate.Value.ToString("yyyy-MM-dd") : null,
                 DesiredEndDate = r.DesiredEndDate.HasValue ? r.DesiredEndDate.Value.ToString("yyyy-MM-dd") : null,
                 StatusValue = (int)r.Status,
@@ -85,10 +86,18 @@ namespace QuanLyPhongTro.Controllers
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "User")]
         public async Task<IActionResult> Create(int roomId, string? note,
-            DateTime? desiredStartDate = null, DateTime? desiredEndDate = null)
+            DateTime? desiredStartDate = null, DateTime? desiredEndDate = null,
+            decimal? deposit = null)
         {
+            if (!deposit.HasValue || deposit.Value < 0)
+            {
+                TempData["Error"] = "Vui lòng nhập tiền cọc hợp lệ.";
+                return RedirectToAction("SearchPage", "Room");
+            }
+
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            var success = await _requestService.CreateAsync(roomId, userId, note, desiredStartDate, desiredEndDate);
+            var success = await _requestService.CreateAsync(
+                roomId, userId, note, desiredStartDate, desiredEndDate, deposit);
 
             if (success)
             {
@@ -130,7 +139,7 @@ namespace QuanLyPhongTro.Controllers
                 StartDate = startDate,
                 EndDate = endDate,
                 Note = note,
-                Deposit = deposit,
+                Deposit = deposit ?? request.Deposit,
                 PaymentDay = paymentDay,
                 ManagementFee = managementFee,
                 ParkingFee = parkingFee,

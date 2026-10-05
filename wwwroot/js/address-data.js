@@ -13,11 +13,11 @@ const _wardCache = {}; // provinceCode → [{code, name}]
  * @returns {Promise<{code:number, name:string}[]>}
  */
 async function fetchProvinces() {
-  if (_provinceList) return _provinceList;
-  const res = await fetch(`${ADDRESS_API}/p/`);
-  const data = await res.json();
-  _provinceList = data.map((p) => ({ code: p.code, name: p.name }));
-  return _provinceList;
+    if (_provinceList) return _provinceList;
+    const res = await fetch(`${ADDRESS_API}/p/`);
+    const data = await res.json();
+    _provinceList = data.map((p) => ({ code: p.code, name: p.name }));
+    return _provinceList;
 }
 
 /**
@@ -26,11 +26,11 @@ async function fetchProvinces() {
  * @returns {Promise<{code:number, name:string}[]>}
  */
 async function fetchWards(provinceCode) {
-  if (!provinceCode) return [];
-  if (_wardCache[provinceCode]) return _wardCache[provinceCode];
-  const res = await fetch(`${ADDRESS_API}/w/?province=${provinceCode}`);
-  const data = await res.json();
-  const list = (data || []).map((w) => ({ code: w.code, name: w.name }));
-  _wardCache[provinceCode] = list;
-  return list;
+    if (!provinceCode) return [];
+    if (_wardCache[provinceCode]) return _wardCache[provinceCode];
+    const res = await fetch(`${ADDRESS_API}/w/?province=${provinceCode}`);
+    const data = await res.json();
+    const list = (data || []).map((w) => ({ code: w.code, name: w.name }));
+    _wardCache[provinceCode] = list;
+    return list;
 }

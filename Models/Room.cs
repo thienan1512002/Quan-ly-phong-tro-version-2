@@ -63,5 +63,7 @@ namespace QuanLyPhongTro.Models
         public ICollection<RentalRequest> RentalRequests { get; set; } = new List<RentalRequest>();
         public ICollection<Contract> Contracts { get; set; } = new List<Contract>();
         public ICollection<RoomImage> Images { get; set; } = new List<RoomImage>();
+        public ICollection<MaintenanceRequest> MaintenanceRequests { get; set; } = new List<MaintenanceRequest>();
+        public ICollection<UtilityReading> UtilityReadings { get; set; } = new List<UtilityReading>();
     }
 }

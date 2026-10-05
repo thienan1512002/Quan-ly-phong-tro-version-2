@@ -19,6 +19,9 @@ namespace QuanLyPhongTro.Data
         public DbSet<RentalRequest> RentalRequests { get; set; }
         public DbSet<Contract> Contracts { get; set; }
         public DbSet<RoomImage> RoomImages { get; set; }
+        public DbSet<MaintenanceRequest> MaintenanceRequests { get; set; }
+        public DbSet<UserNotification> UserNotifications { get; set; }
+        public DbSet<UtilityReading> UtilityReadings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -66,6 +69,36 @@ namespace QuanLyPhongTro.Data
                       .WithMany(u => u.Contracts)
                       .HasForeignKey(c => c.UserId)
                       .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<MaintenanceRequest>(entity =>
+            {
+                entity.HasOne(r => r.Room)
+                      .WithMany(r => r.MaintenanceRequests)
+                      .HasForeignKey(r => r.RoomId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(r => r.User)
+                      .WithMany(u => u.MaintenanceRequests)
+                      .HasForeignKey(r => r.UserId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<UserNotification>(entity =>
+            {
+                entity.HasOne(n => n.User)
+                      .WithMany(u => u.Notifications)
+                      .HasForeignKey(n => n.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<UtilityReading>(entity =>
+            {
+                entity.HasIndex(r => new { r.RoomId, r.BillingMonth }).IsUnique();
+                entity.HasOne(r => r.Room)
+                      .WithMany(r => r.UtilityReadings)
+                      .HasForeignKey(r => r.RoomId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

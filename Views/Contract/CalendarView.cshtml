@@ -3,178 +3,463 @@
 }
 
 <style>
-    /* ── Calendar layout ── */
-    .cal-wrap       { overflow-x: auto; overflow-y: auto; max-height: 580px; }
-    .cal-grid       { min-width: 640px; font-size: 13px; }
+    .calendar-page {
+        max-width: 1480px;
+        margin: 0 auto;
+    }
 
-    /* rows */
+    .calendar-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 18px;
+    }
+
+    .calendar-title h4 {
+        margin: 0;
+        font-weight: 750;
+        color: #172033;
+    }
+
+    .calendar-title .title-icon {
+        width: 38px;
+        height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background: #dff3e8;
+        color: #1f7a5a;
+    }
+
+    .cal-stat-card .card-body {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 16px 18px;
+    }
+
+    .cal-stat-icon {
+        width: 42px;
+        height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background: #f2f4f7;
+        flex-shrink: 0;
+    }
+
+    .cal-stat-value {
+        font-size: 1.55rem;
+        line-height: 1;
+        font-weight: 800;
+    }
+
+    .cal-stat-label {
+        margin-top: 5px;
+        color: #667085;
+        font-size: .82rem;
+        font-weight: 600;
+    }
+
+    .calendar-toolbar .card-body {
+        min-height: 58px;
+        padding: 10px 14px;
+    }
+
+    .month-pill {
+        min-width: 150px;
+        text-align: center;
+        font-size: 1rem;
+        font-weight: 750;
+        color: #172033;
+    }
+
+    .legend-dot {
+        width: 18px;
+        height: 9px;
+        border-radius: 999px;
+        display: inline-block;
+    }
+
+    .legend-line {
+        width: 2px;
+        height: 16px;
+        background: #ef4444;
+        display: inline-block;
+    }
+
+    .cal-shell {
+        overflow: hidden;
+        border-radius: 8px;
+        border: 1px solid #e5e9f2;
+        background: #fff;
+        box-shadow: 0 14px 34px rgba(17, 24, 39, .08);
+    }
+
+    .cal-wrap {
+        overflow: auto;
+        max-height: calc(100vh - 300px);
+        min-height: 500px;
+    }
+
+    .cal-grid {
+        min-width: 960px;
+        font-size: 13px;
+    }
+
     .cal-hdr-row,
-    .cal-room-row   { display: flex; align-items: stretch; border-bottom: 1px solid #e5e7eb; }
-    .cal-room-row   { min-height: 56px; }
-    .cal-room-row:hover > .cal-room-col { background: #eff6ff; }
+    .cal-room-row {
+        display: flex;
+        align-items: stretch;
+        border-bottom: 1px solid #eef2f7;
+    }
 
-    /* sticky room column */
-    .cal-room-col   {
-        width: 190px; min-width: 190px;
-        padding: 8px 12px;
-        background: #f8fafc;
-        border-right: 2px solid #cbd5e1;
-        position: sticky; left: 0; z-index: 10;
-        display: flex; flex-direction: column; justify-content: center;
+    .cal-room-row {
+        min-height: 82px;
+        background: #fff;
+    }
+
+    .cal-room-row:hover {
+        background: #fbfcff;
+    }
+
+    .cal-room-row:hover > .cal-room-col {
+        background: #f8fbff;
+    }
+
+    .cal-room-col {
+        width: 220px;
+        min-width: 220px;
+        padding: 12px 14px;
+        background: #fff;
+        border-right: 1px solid #dce4f0;
+        position: sticky;
+        left: 0;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
         transition: background .15s;
     }
+
     .cal-hdr-row .cal-room-col {
-        font-weight: 700; font-size: 11px; letter-spacing: .6px;
-        color: #64748b; text-transform: uppercase; z-index: 21;
-        background: #f1f5f9;
+        min-height: 46px;
+        font-weight: 800;
+        font-size: 11px;
+        letter-spacing: .04em;
+        color: #667085;
+        text-transform: uppercase;
+        z-index: 21;
+        background: #f8fafc;
     }
 
-    /* days area */
-    .cal-days-area  { flex: 1; display: flex; position: relative; min-width: 0; }
-
-    /* day header cells */
-    .cal-day-hdr    {
-        flex: 1; min-width: 30px;
-        text-align: center; padding: 4px 0;
-        border-right: 1px solid #e2e8f0;
-        font-weight: 700; font-size: 13px; color: #334155;
-        background: #f1f5f9;
+    .cal-days-area {
+        flex: 1;
+        display: flex;
+        position: relative;
+        min-width: 0;
     }
-    .cal-day-hdr .dow   { font-size: 9px; font-weight: 400; color: #94a3b8; display: block; }
-    .cal-day-hdr.today  { background: #eff6ff; color: #1d4ed8; }
-    .cal-day-hdr.today .dow { color: #93c5fd; }
-    .cal-day-hdr.weekend{ color: #b45309; background: #fffbeb; }
 
-    /* background grid cells */
-    .cal-bg-cells   { position: absolute; inset: 0; display: flex; pointer-events: none; z-index: 0; }
-    .cal-bg-cell    { flex: 1; min-width: 30px; border-right: 1px solid #f1f5f9; }
-    .cal-bg-cell.today   { background: rgba(37,99,235,.06); }
-    .cal-bg-cell.weekend { background: rgba(251,191,36,.04); }
+    .cal-day-hdr {
+        flex: 1;
+        min-width: 38px;
+        text-align: center;
+        padding: 7px 0 6px;
+        border-right: 1px solid #eef2f7;
+        font-weight: 800;
+        font-size: 13px;
+        color: #344054;
+        background: #f8fafc;
+    }
 
-    /* contract bars */
+    .cal-day-hdr .dow {
+        font-size: 10px;
+        font-weight: 700;
+        color: #98a2b3;
+        display: block;
+        margin-bottom: 2px;
+    }
+
+    .cal-day-hdr.today {
+        background: #dff3e8;
+        color: #1f7a5a;
+    }
+
+    .cal-day-hdr.weekend {
+        color: #b54708;
+        background: #fffbf3;
+    }
+
+    .cal-bg-cells {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .cal-bg-cell {
+        flex: 1;
+        min-width: 38px;
+        border-right: 1px solid #f1f4f9;
+    }
+
+    .cal-bg-cell.today {
+        background: rgba(37, 86, 217, .08);
+    }
+
+    .cal-bg-cell.weekend {
+        background: rgba(247, 144, 9, .035);
+    }
+
     .cal-bar {
         position: absolute;
-        top: 7px; height: calc(100% - 14px);
-        border-radius: 6px;
+        top: 18px;
+        height: 46px;
+        border-radius: 8px;
         cursor: pointer;
-        display: flex; align-items: center;
-        padding: 0 9px;
+        display: flex;
+        align-items: center;
+        min-width: 44px;
+        padding: 0 12px;
         overflow: hidden;
         z-index: 2;
-        box-shadow: 0 1px 4px rgba(0,0,0,.18);
-        transition: filter .15s, box-shadow .15s, top .1s, height .1s;
+        box-shadow: 0 8px 20px rgba(37, 86, 217, .22);
+        transition: transform .16s ease, box-shadow .16s ease, filter .16s ease;
     }
-    .cal-bar:hover  { filter: brightness(1.1); box-shadow: 0 4px 14px rgba(0,0,0,.28); z-index: 5; top: 5px; height: calc(100% - 10px); }
-    .cal-bar .bar-name  { color: #fff; font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .cal-bar .bar-dates { color: rgba(255,255,255,.72); font-size: 10px; margin-left: 6px; white-space: nowrap; }
 
-    /* today vertical line */
-    .cal-today-line {
-        position: absolute; top: 0; bottom: 0; width: 2px;
-        background: #ef4444; z-index: 4; pointer-events: none;
+    .cal-bar:hover {
+        filter: brightness(1.04);
+        box-shadow: 0 12px 28px rgba(37, 86, 217, .28);
+        transform: translateY(-1px);
+        z-index: 5;
     }
+
+    .cal-bar.ended {
+        box-shadow: 0 8px 18px rgba(52, 64, 84, .16);
+    }
+
+    .cal-bar-content {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .cal-bar .bar-name {
+        color: #fff;
+        font-size: 12px;
+        font-weight: 800;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .cal-bar .bar-dates {
+        color: rgba(255, 255, 255, .78);
+        font-size: 10px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .cal-today-line {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #ef4444;
+        z-index: 4;
+        pointer-events: none;
+    }
+
+    .cal-today-line::before,
     .cal-today-line::after {
         content: '';
-        position: absolute; top: 0; left: -3px;
-        width: 8px; height: 8px;
-        background: #ef4444; border-radius: 50%;
+        position: absolute;
+        left: -4px;
+        width: 10px;
+        height: 10px;
+        background: #ef4444;
+        border-radius: 50%;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, .12);
     }
 
-    /* empty row label */
-    .cal-empty-lbl  {
-        position: absolute; inset: 0;
-        display: flex; align-items: center; padding-left: 14px;
-        color: #cbd5e1; font-size: 11px; font-style: italic;
-        pointer-events: none; z-index: 1;
+    .cal-today-line::before { top: 6px; }
+    .cal-today-line::after { bottom: 6px; }
+
+    .cal-empty-lbl {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        padding-left: 18px;
+        color: #98a2b3;
+        font-size: 12px;
+        font-style: italic;
+        pointer-events: none;
+        z-index: 1;
     }
 
-    /* room col text */
-    .room-name  { font-weight: 600; font-size: 13px; color: #1e293b; }
-    .room-meta  { font-size: 11px; color: #94a3b8; }
-    .room-price { font-size: 11px; color: #16a34a; font-weight: 500; }
+    .room-name {
+        font-weight: 800;
+        font-size: 14px;
+        color: #172033;
+        margin-bottom: 2px;
+    }
 
-    /* modal sections */
-    .modal-section  { border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; }
+    .room-meta {
+        font-size: 11px;
+        color: #667085;
+        line-height: 1.3;
+    }
 
-    /* info grid */
-    .info-group         { background:#f8fafc; border:1px solid #e5e7eb; border-radius:10px; padding:14px 18px; margin-bottom:14px; }
-    .info-group-title   { font-weight:700; font-size:13px; color:#374151; margin-bottom:12px; display:flex; align-items:center; gap:7px; border-bottom:1px solid #e5e7eb; padding-bottom:8px; }
-    .info-grid          { display:grid; grid-template-columns:1fr 1fr; gap:8px 20px; }
-    .info-grid.cols-1   { grid-template-columns:1fr; }
-    .info-item          { display:flex; flex-direction:column; gap:2px; }
-    .info-item.span-2   { grid-column:span 2; }
-    .info-label         { font-size:11px; color:#9ca3af; font-weight:500; text-transform:uppercase; letter-spacing:.4px; }
-    .info-value         { font-size:13px; color:#1e293b; font-weight:500; }
-    .info-value.muted   { color:#9ca3af; font-style:italic; }
-    .info-value.money   { color:#16a34a; font-weight:700; }
+    .room-price {
+        font-size: 12px;
+        color: #079455;
+        font-weight: 800;
+        margin-top: 3px;
+    }
+
+    .room-status-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: fit-content;
+        min-width: 92px;
+        margin-top: 7px;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 800;
+    }
+
+    .room-status-pill.available { color: #067647; background: #dcfae6; }
+    .room-status-pill.pending { color: #b54708; background: #fef0c7; }
+    .room-status-pill.occupied { color: #b42318; background: #fee4e2; }
+
+    .info-group {
+        background:#f8fafc;
+        border:1px solid #e5e7eb;
+        border-radius:8px;
+        padding:14px 18px;
+        margin-bottom:14px;
+    }
+
+    .info-group-title {
+        font-weight:700;
+        font-size:13px;
+        color:#374151;
+        margin-bottom:12px;
+        display:flex;
+        align-items:center;
+        gap:7px;
+        border-bottom:1px solid #e5e7eb;
+        padding-bottom:8px;
+    }
+
+    .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px 20px; }
+    .info-item { display:flex; flex-direction:column; gap:2px; }
+    .info-item.span-2 { grid-column:span 2; }
+    .info-label { font-size:11px; color:#9ca3af; font-weight:700; text-transform:uppercase; }
+    .info-value { font-size:13px; color:#1e293b; font-weight:600; }
+    .info-value.muted { color:#9ca3af; font-style:italic; }
+    .info-value.money { color:#079455; font-weight:800; }
+
+    @@media (max-width: 767.98px) {
+        .cal-wrap { max-height: calc(100vh - 360px); }
+        .calendar-toolbar .card-body { align-items: stretch !important; }
+        .calendar-toolbar select { width: 100% !important; }
+        .calendar-legend { width: 100%; justify-content: space-between; }
+    }
 </style>
 
-<!-- Page header -->
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <h4 class="mb-0"><i class="fas fa-calendar-alt me-2 text-primary"></i>Lịch trạng thái thuê phòng</h4>
-</div>
+<div class="calendar-page">
+    <div class="calendar-title">
+        <span class="title-icon"><i class="fas fa-calendar-days"></i></span>
+        <div>
+            <h4>Lịch trạng thái thuê phòng</h4>
+            <div class="page-subtitle">Theo dõi tình trạng phòng theo tháng, hợp đồng đang thuê và các mốc hết hạn.</div>
+        </div>
+    </div>
 
-<!-- Stats -->
-<div class="row g-3 mb-3">
-    <div class="col-6 col-md-3">
-        <div class="card text-center py-3">
-            <div class="h3 fw-bold mb-0 text-primary" id="statTotal">—</div>
-            <div class="text-muted small mt-1"><i class="fas fa-door-open me-1"></i>Tổng phòng</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card text-center py-3">
-            <div class="h3 fw-bold mb-0 text-danger" id="statOccupied">—</div>
-            <div class="text-muted small mt-1"><i class="fas fa-user-check me-1"></i>Đang có người thuê</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card text-center py-3">
-            <div class="h3 fw-bold mb-0 text-success" id="statAvailable">—</div>
-            <div class="text-muted small mt-1"><i class="fas fa-check-circle me-1"></i>Phòng trống</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card text-center py-3">
-            <div class="h3 fw-bold mb-0 text-warning" id="statRevenue" style="font-size:1.1rem!important">—</div>
-            <div class="text-muted small mt-1"><i class="fas fa-money-bill me-1"></i>Doanh thu tháng</div>
-        </div>
-    </div>
-</div>
-
-<!-- Toolbar -->
-<div class="card mb-3">
-    <div class="card-body py-2 d-flex flex-wrap gap-2 align-items-center justify-content-between">
-        <!-- Month nav -->
-        <div class="d-flex align-items-center gap-2">
-            <button class="btn btn-sm btn-outline-primary" onclick="prevMonth()"><i class="fas fa-chevron-left"></i></button>
-            <span id="monthLabel" class="fw-bold px-2" style="min-width:140px;text-align:center;font-size:15px">...</span>
-            <button class="btn btn-sm btn-outline-primary" onclick="nextMonth()"><i class="fas fa-chevron-right"></i></button>
-            <button class="btn btn-sm btn-secondary" onclick="goToday()"><i class="fas fa-crosshairs me-1"></i>Hôm nay</button>
-        </div>
-        <!-- Filter + Legend -->
-        <div class="d-flex align-items-center gap-3 flex-wrap">
-            <div class="d-flex gap-3 small text-muted">
-                <span class="d-flex align-items-center gap-1">
-                    <span style="width:14px;height:10px;background:linear-gradient(135deg,#2563eb,#1d4ed8);border-radius:3px;display:inline-block"></span> Đang thuê
-                </span>
-                <span class="d-flex align-items-center gap-1">
-                    <span style="width:14px;height:10px;background:linear-gradient(135deg,#64748b,#475569);border-radius:3px;display:inline-block"></span> Đã kết thúc
-                </span>
-                <span class="d-flex align-items-center gap-1">
-                    <span style="width:2px;height:14px;background:#ef4444;display:inline-block"></span> Hôm nay
-                </span>
+    <div class="row g-3 mb-3">
+        <div class="col-6 col-xl-3">
+            <div class="card cal-stat-card h-100">
+                <div class="card-body">
+                    <span class="cal-stat-icon text-primary"><i class="fas fa-door-open"></i></span>
+                    <div>
+                        <div class="cal-stat-value text-primary" id="statTotal">—</div>
+                        <div class="cal-stat-label">Tổng phòng</div>
+                    </div>
+                </div>
             </div>
-            <select id="roomFilter" class="form-select form-select-sm" style="width:185px" onchange="applyFilter()">
-                <option value="0">Tất cả phòng</option>
-            </select>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="card cal-stat-card h-100">
+                <div class="card-body">
+                    <span class="cal-stat-icon text-danger"><i class="fas fa-user-check"></i></span>
+                    <div>
+                        <div class="cal-stat-value text-danger" id="statOccupied">—</div>
+                        <div class="cal-stat-label">Đang có người thuê</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="card cal-stat-card h-100">
+                <div class="card-body">
+                    <span class="cal-stat-icon text-success"><i class="fas fa-circle-check"></i></span>
+                    <div>
+                        <div class="cal-stat-value text-success" id="statAvailable">—</div>
+                        <div class="cal-stat-label">Phòng trống</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="card cal-stat-card h-100">
+                <div class="card-body">
+                    <span class="cal-stat-icon text-warning"><i class="fas fa-money-bill-wave"></i></span>
+                    <div>
+                        <div class="cal-stat-value text-success" id="statRevenue" style="font-size:1.05rem">—</div>
+                        <div class="cal-stat-label">Doanh thu tháng</div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- Timeline -->
-<div class="card">
-    <div class="card-body p-0" style="overflow:hidden">
+    <div class="card calendar-toolbar mb-3">
+        <div class="card-body d-flex flex-wrap gap-3 align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-sm btn-outline-primary" onclick="prevMonth()" title="Tháng trước"><i class="fas fa-chevron-left"></i></button>
+                <span id="monthLabel" class="month-pill">...</span>
+                <button class="btn btn-sm btn-outline-primary" onclick="nextMonth()" title="Tháng sau"><i class="fas fa-chevron-right"></i></button>
+                <button class="btn btn-sm btn-secondary" onclick="goToday()"><i class="fas fa-crosshairs me-1"></i>Hôm nay</button>
+            </div>
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                <div class="calendar-legend d-flex gap-3 small text-muted">
+                    <span class="d-flex align-items-center gap-1">
+                        <span class="legend-dot" style="background:linear-gradient(135deg,#2f946f,#1f7a5a)"></span> Đang thuê
+                    </span>
+                    <span class="d-flex align-items-center gap-1">
+                        <span class="legend-dot" style="background:linear-gradient(135deg,#667085,#475467)"></span> Đã kết thúc
+                    </span>
+                    <span class="d-flex align-items-center gap-1">
+                        <span class="legend-line"></span> Hôm nay
+                    </span>
+                </div>
+                <select id="roomFilter" class="form-select form-select-sm" style="width:185px" onchange="applyFilter()">
+                    <option value="0">Tất cả phòng</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="cal-shell">
         <div class="cal-wrap">
             <div id="calendarGrid" class="cal-grid"></div>
         </div>
@@ -182,6 +467,7 @@
 </div>
 
 <!-- DevExtreme Popup container -->
+@Html.AntiForgeryToken()
 <div id="contractDetailPopup"></div>
 
 @section Scripts {
@@ -189,6 +475,7 @@
     const MONTHS = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6',
                     'Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
     const DAYS_VI = ['CN','T2','T3','T4','T5','T6','T7'];
+    const _token = document.querySelector('input[name="__RequestVerificationToken"]').value;
 
     let cur = { year: new Date().getFullYear(), month: new Date().getMonth() + 1 };
     let allRooms = [], allContracts = [], curDays = 30;
@@ -234,7 +521,7 @@
         document.getElementById('statTotal').textContent     = allRooms.length;
         document.getElementById('statOccupied').textContent  = occ.size;
         document.getElementById('statAvailable').textContent = allRooms.length - occ.size;
-        document.getElementById('statRevenue').textContent   = rev.toLocaleString('vi-VN') + ' VND';
+        document.getElementById('statRevenue').textContent   = rev.toLocaleString('vi-VN') + ' VNĐ';
     }
 
     function renderCalendar() {
@@ -247,7 +534,7 @@
 
         /* ── Header row ── */
         html += '<div class="cal-hdr-row" style="position:sticky;top:0;z-index:20;">';
-        html += '<div class="cal-room-col">PHONG</div>';
+        html += '<div class="cal-room-col">Phòng</div>';
         html += '<div class="cal-days-area">';
         for (var d = 1; d <= n; d++) {
             var dow    = new Date(cur.year, cur.month-1, d).getDay();
@@ -265,8 +552,8 @@
         /* ── Room rows ── */
         rooms.forEach(function(room) {
             var contracts = allContracts.filter(function(c){ return c.roomId === room.id; });
-            var stCls = room.status === 0 ? 'bg-success' : room.status === 2 ? 'bg-warning text-dark' : 'bg-danger';
-            var stTxt = room.status === 0 ? 'Trống' : room.status === 2 ? '⏳ Chờ duyệt' : 'Đang thuê';
+            var stCls = room.status === 0 ? 'available' : room.status === 2 ? 'pending' : 'occupied';
+            var stTxt = room.status === 0 ? 'Trống' : room.status === 2 ? 'Chờ duyệt' : 'Đang thuê';
 
             html += '<div class="cal-room-row">';
 
@@ -275,7 +562,7 @@
                   + '<div class="room-name">'+room.name+'</div>'
                   + '<div class="room-meta"><i class="fas fa-map-marker-alt me-1"></i>'+room.address+'</div>'
                   + '<div class="room-price"><i class="fas fa-money-bill me-1"></i>'+(+room.price).toLocaleString('vi-VN')+' VNĐ/tháng</div>'
-                  + '<span class="badge '+stCls+' mt-1" style="font-size:9px">'+stTxt+'</span>'
+                  + '<span class="room-status-pill '+stCls+'">'+stTxt+'</span>'
                   + '</div>';
 
             /* days area */
@@ -308,15 +595,18 @@
                 var left   = (bStart - 1) / n * 100;
                 var width  = (bEnd - bStart + 1) / n * 100;
                 var bg     = c.isActive
-                    ? 'linear-gradient(135deg,#2563eb,#1d4ed8)'
-                    : 'linear-gradient(135deg,#64748b,#475569)';
+                    ? 'linear-gradient(135deg,#2f946f,#1f7a5a)'
+                    : 'linear-gradient(135deg,#667085,#475467)';
+                var barCls = c.isActive ? 'cal-bar' : 'cal-bar ended';
 
-                html += '<div class="cal-bar"'
+                html += '<div class="'+barCls+'"'
                       + ' style="left:'+left+'%;width:'+width+'%;background:'+bg+';"'
                       + ' onclick="showDetail('+c.id+')"'
                       + ' title="'+c.userFullName+' | '+c.startDateDisplay+' - '+c.endDateDisplay+'">'
+                      + '<div class="cal-bar-content">'
                       + '<span class="bar-name">'+c.userFullName+'</span>'
-                      + '<span class="bar-dates"> '+c.startDateDisplay+' - '+c.endDateDisplay+'</span>'
+                      + '<span class="bar-dates">'+c.startDateDisplay+' - '+c.endDateDisplay+'</span>'
+                      + '</div>'
                       + '</div>';
             });
 
@@ -381,6 +671,7 @@
     var _detailPopup    = null;
     var _detailContent  = null;  /* jQuery ref tới scroll container bên trong popup */
     var _currentLink    = '#';
+    var _currentContractId = null;
 
     function showDetail(contractId) {
         var c    = allContracts.find(function(x){ return x.id === contractId; });
@@ -410,6 +701,7 @@
             isActive:        c.isActive
         };
         _currentLink = '/Contract/Details/' + c.id;
+        _currentContractId = c.id;
 
         if (!_detailPopup) {
             _detailPopup = $('#contractDetailPopup').dxPopup({
@@ -433,7 +725,7 @@
                         options: {
                             text: 'Gia hạn', type: 'normal', icon: 'refresh',
                             onClick: function () {
-                                Swal.fire({ icon: 'info', title: 'Thông báo', text: 'Chức năng gia hạn đang được phát triển.' });
+                                openCalendarRenew();
                             }
                         }
                     },
@@ -459,6 +751,90 @@
         }
 
         _detailPopup.show();
+    }
+
+    function fmtIsoDate(d) {
+        return d.getFullYear() + '-' +
+            String(d.getMonth() + 1).padStart(2, '0') + '-' +
+            String(d.getDate()).padStart(2, '0');
+    }
+
+    async function openCalendarRenew() {
+        var c = allContracts.find(function(x){ return x.id === _currentContractId; });
+        if (!c) return;
+        if (!c.isActive) {
+            Swal.fire({ icon: 'warning', title: 'Không thể gia hạn', text: 'Chỉ có thể gia hạn hợp đồng đang hiệu lực.' });
+            return;
+        }
+
+        var currentEnd = parseDate(c.endDate);
+        var suggestedEnd = new Date(currentEnd);
+        suggestedEnd.setMonth(suggestedEnd.getMonth() + 6);
+        var minEnd = new Date(currentEnd.getFullYear(), currentEnd.getMonth(), currentEnd.getDate() + 1);
+
+        var result = await Swal.fire({
+            title: 'Gia hạn hợp đồng',
+            html:
+                '<div class="text-start">' +
+                '<div class="small text-muted mb-2">Người thuê: <strong>' + (c.userFullName || '—') + '</strong></div>' +
+                '<label class="form-label fw-semibold">Ngày kết thúc hiện tại</label>' +
+                '<input class="form-control mb-3" value="' + c.endDateDisplay + '" disabled>' +
+                '<label class="form-label fw-semibold">Ngày kết thúc mới</label>' +
+                '<input id="calRenewEndDate" type="date" class="form-control mb-3" value="' + fmtIsoDate(suggestedEnd) + '" min="' + fmtIsoDate(minEnd) + '">' +
+                '<label class="form-label fw-semibold">Giá thuê mới (VNĐ/tháng)</label>' +
+                '<input id="calRenewRent" type="number" min="1" step="100000" class="form-control mb-3" value="' + Math.round(c.monthlyRent || 0) + '">' +
+                '<label class="form-label fw-semibold">Ghi chú</label>' +
+                '<textarea id="calRenewNote" class="form-control" rows="3" placeholder="VD: Gia hạn thêm 6 tháng, giữ nguyên điều khoản..."></textarea>' +
+                '</div>',
+            imageUrl: window._swalConfirmImg,
+            imageWidth: 80,
+            imageHeight: 80,
+            showCancelButton: true,
+            confirmButtonText: 'Gia hạn',
+            cancelButtonText: 'Hủy',
+            confirmButtonColor: '#1f7a5a',
+            preConfirm: function() {
+                var endDate = document.getElementById('calRenewEndDate').value;
+                var rent = document.getElementById('calRenewRent').value;
+                if (!endDate) {
+                    Swal.showValidationMessage('Vui lòng chọn ngày kết thúc mới');
+                    return false;
+                }
+                if (new Date(endDate) <= currentEnd) {
+                    Swal.showValidationMessage('Ngày kết thúc mới phải sau ngày kết thúc hiện tại');
+                    return false;
+                }
+                if (rent && Number(rent) <= 0) {
+                    Swal.showValidationMessage('Giá thuê mới phải lớn hơn 0');
+                    return false;
+                }
+                return {
+                    endDate: endDate,
+                    rent: rent,
+                    note: document.getElementById('calRenewNote').value || ''
+                };
+            }
+        });
+
+        if (!result.isConfirmed) return;
+
+        var body = new URLSearchParams({
+            __RequestVerificationToken: _token,
+            ContractId: c.id,
+            NewEndDate: result.value.endDate,
+            Note: result.value.note
+        });
+        if (result.value.rent) body.append('MonthlyRent', result.value.rent);
+
+        var res = await fetch('/Contract/Renew', { method: 'POST', body: body });
+        var json = await res.json();
+        if (json.success) {
+            if (_detailPopup) _detailPopup.hide();
+            await loadData();
+            Swal.fire({ icon: 'success', title: 'Thành công', text: json.message, timer: 2200, showConfirmButton: false });
+        } else {
+            Swal.fire({ icon: 'error', title: 'Không thể gia hạn', html: json.message });
+        }
     }
 
     /* ── Navigation ── */

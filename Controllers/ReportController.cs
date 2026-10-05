@@ -29,7 +29,7 @@ namespace QuanLyPhongTro.Controllers
         // GET /Report/RentalReport
         public async Task<IActionResult> RentalReport(int? year, int? month, bool? active)
         {
-            int selYear  = year  ?? DateTime.Today.Year;
+            int selYear = year ?? DateTime.Today.Year;
             int selMonth = month ?? 0; // 0 = tất cả tháng
 
             var query = _context.Contracts
@@ -45,7 +45,7 @@ namespace QuanLyPhongTro.Controllers
 
             // Lọc theo năm (dựa vào StartDate)
             query = query.Where(c => c.StartDate.Year == selYear
-                                  || c.EndDate.Year   == selYear
+                                  || c.EndDate.Year == selYear
                                   || (c.StartDate.Year < selYear && c.EndDate.Year > selYear));
 
             // Lọc theo tháng nếu chọn
@@ -56,16 +56,16 @@ namespace QuanLyPhongTro.Controllers
 
             var contracts = await query.OrderBy(c => c.StartDate).ToListAsync();
 
-            ViewBag.Year    = selYear;
-            ViewBag.Month   = selMonth;
-            ViewBag.Active  = active;
-            ViewBag.Years   = Enumerable.Range(DateTime.Today.Year - 4, 6).Reverse().ToList();
+            ViewBag.Year = selYear;
+            ViewBag.Month = selMonth;
+            ViewBag.Active = active;
+            ViewBag.Years = Enumerable.Range(DateTime.Today.Year - 4, 6).Reverse().ToList();
 
             // Tổng hợp
             ViewBag.TotalContracts = contracts.Count;
-            ViewBag.ActiveCount    = contracts.Count(c => c.IsActive);
-            ViewBag.TotalDeposit   = contracts.Sum(c => c.Deposit ?? 0);
-            ViewBag.TotalRent      = contracts.Sum(c => c.MonthlyRent);
+            ViewBag.ActiveCount = contracts.Count(c => c.IsActive);
+            ViewBag.TotalDeposit = contracts.Sum(c => c.Deposit ?? 0);
+            ViewBag.TotalRent = contracts.Sum(c => c.MonthlyRent);
 
             return View(contracts);
         }
@@ -73,7 +73,7 @@ namespace QuanLyPhongTro.Controllers
         // GET /Report/ExportRental
         public async Task<IActionResult> ExportRental(int? year, int? month, bool? active)
         {
-            int selYear  = year  ?? DateTime.Today.Year;
+            int selYear = year ?? DateTime.Today.Year;
             int selMonth = month ?? 0;
 
             var query = _context.Contracts
@@ -81,11 +81,11 @@ namespace QuanLyPhongTro.Controllers
                 .Include(c => c.User)
                 .AsQueryable();
 
-            if (active == true)  query = query.Where(c => c.IsActive);
+            if (active == true) query = query.Where(c => c.IsActive);
             if (active == false) query = query.Where(c => !c.IsActive);
 
             query = query.Where(c => c.StartDate.Year == selYear
-                                  || c.EndDate.Year   == selYear
+                                  || c.EndDate.Year == selYear
                                   || (c.StartDate.Year < selYear && c.EndDate.Year > selYear));
 
             if (selMonth > 0)
@@ -127,7 +127,7 @@ namespace QuanLyPhongTro.Controllers
                 hCell.Style.Font.FontColor = XLColor.White;
                 hCell.Style.Fill.BackgroundColor = XLColor.FromArgb(46, 134, 193);
                 hCell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-                hCell.Style.Alignment.Vertical   = XLAlignmentVerticalValues.Center;
+                hCell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
                 hCell.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
             }
             ws.Row(4).Height = 22;
@@ -140,15 +140,15 @@ namespace QuanLyPhongTro.Controllers
                     ? XLColor.FromArgb(235, 245, 251)
                     : XLColor.White;
 
-                ws.Cell(row, 1).Value  = stt++;
-                ws.Cell(row, 2).Value  = c.Room?.Name    ?? "";
-                ws.Cell(row, 3).Value  = c.Room?.Address ?? "";
-                ws.Cell(row, 4).Value  = c.User?.FullName    ?? "";
-                ws.Cell(row, 5).Value  = c.User?.PhoneNumber ?? "";
-                ws.Cell(row, 6).Value  = c.StartDate;
-                ws.Cell(row, 7).Value  = c.EndDate;
-                ws.Cell(row, 8).Value  = c.MonthlyRent;
-                ws.Cell(row, 9).Value  = c.Deposit ?? 0;
+                ws.Cell(row, 1).Value = stt++;
+                ws.Cell(row, 2).Value = c.Room?.Name ?? "";
+                ws.Cell(row, 3).Value = c.Room?.Address ?? "";
+                ws.Cell(row, 4).Value = c.User?.FullName ?? "";
+                ws.Cell(row, 5).Value = c.User?.PhoneNumber ?? "";
+                ws.Cell(row, 6).Value = c.StartDate;
+                ws.Cell(row, 7).Value = c.EndDate;
+                ws.Cell(row, 8).Value = c.MonthlyRent;
+                ws.Cell(row, 9).Value = c.Deposit ?? 0;
                 ws.Cell(row, 10).Value = c.IsActive ? "Hiệu lực" : "Đã kết thúc";
 
                 ws.Cell(row, 6).Style.NumberFormat.Format = "dd/mm/yyyy";
@@ -160,7 +160,7 @@ namespace QuanLyPhongTro.Controllers
                 {
                     ws.Cell(row, col).Style.Fill.BackgroundColor = bg;
                     ws.Cell(row, col).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-                    ws.Cell(row, col).Style.Alignment.Vertical   = XLAlignmentVerticalValues.Center;
+                    ws.Cell(row, col).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
                 }
                 ws.Cell(row, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
                 row++;
@@ -200,7 +200,7 @@ namespace QuanLyPhongTro.Controllers
         {
             int selYear = year ?? DateTime.Today.Year;
             ViewBag.Years = Enumerable.Range(DateTime.Today.Year - 4, 6).Reverse().ToList();
-            ViewBag.Year  = selYear;
+            ViewBag.Year = selYear;
 
             // Lấy tất cả hợp đồng active (hoặc đã kết thúc trong năm)
             var contracts = await _context.Contracts
@@ -214,25 +214,27 @@ namespace QuanLyPhongTro.Controllers
             for (int m = 1; m <= 12; m++)
             {
                 var firstDay = new DateTime(selYear, m, 1);
-                var lastDay  = firstDay.AddMonths(1).AddDays(-1);
+                var lastDay = firstDay.AddMonths(1).AddDays(-1);
                 monthly[m] = contracts
                     .Where(c => c.StartDate <= lastDay && c.EndDate >= firstDay)
                     .Sum(c => c.MonthlyRent);
             }
 
             ViewBag.Monthly = monthly;
-            ViewBag.TotalRevenue     = monthly.Sum();
-            ViewBag.AvgMonthly       = monthly.Where(x => x > 0).DefaultIfEmpty(0).Average();
-            ViewBag.BestMonth        = Array.IndexOf(monthly, monthly.Skip(1).Max());
-            ViewBag.ActiveContracts  = contracts.Count(c => c.IsActive);
-            ViewBag.TotalContracts   = contracts.Count;
+            ViewBag.TotalRevenue = monthly.Sum();
+            ViewBag.AvgMonthly = monthly.Where(x => x > 0).DefaultIfEmpty(0).Average();
+            ViewBag.BestMonth = Array.IndexOf(monthly, monthly.Skip(1).Max());
+            ViewBag.ActiveContracts = contracts.Count(c => c.IsActive);
+            ViewBag.TotalContracts = contracts.Count;
 
             // Top phòng doanh thu cao nhất
             var topRooms = contracts
                 .GroupBy(c => new { c.RoomId, Name = c.Room?.Name ?? "?" })
-                .Select(g => new {
+                .Select(g => new
+                {
                     g.Key.Name,
-                    Revenue = g.Sum(c => {
+                    Revenue = g.Sum(c =>
+                    {
                         // Đếm tháng trong selYear mà HĐ này active
                         int months = 0;
                         for (int m = 1; m <= 12; m++)
@@ -243,7 +245,8 @@ namespace QuanLyPhongTro.Controllers
                         }
                         return c.MonthlyRent * months;
                     }),
-                    Months = g.Sum(c => {
+                    Months = g.Sum(c =>
+                    {
                         int months = 0;
                         for (int m = 1; m <= 12; m++)
                         {
@@ -303,21 +306,21 @@ namespace QuanLyPhongTro.Controllers
                 hCell.Style.Font.FontColor = XLColor.White;
                 hCell.Style.Fill.BackgroundColor = XLColor.FromArgb(46, 134, 193);
                 hCell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-                hCell.Style.Alignment.Vertical   = XLAlignmentVerticalValues.Center;
+                hCell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
                 hCell.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
             }
             ws1.Row(4).Height = 22;
 
             // Tính doanh thu từng tháng
-            var monthRevs   = new decimal[13];
+            var monthRevs = new decimal[13];
             var monthCounts = new int[13];
             decimal totalRev = 0;
             for (int m = 1; m <= 12; m++)
             {
-                var fd   = new DateTime(selYear, m, 1);
-                var ld   = fd.AddMonths(1).AddDays(-1);
+                var fd = new DateTime(selYear, m, 1);
+                var ld = fd.AddMonths(1).AddDays(-1);
                 var list = contracts.Where(c => c.StartDate <= ld && c.EndDate >= fd).ToList();
-                monthRevs[m]   = list.Sum(c => c.MonthlyRent);
+                monthRevs[m] = list.Sum(c => c.MonthlyRent);
                 monthCounts[m] = list.Count;
                 totalRev += monthRevs[m];
             }
@@ -385,7 +388,7 @@ namespace QuanLyPhongTro.Controllers
                 hCell.Style.Font.FontColor = XLColor.White;
                 hCell.Style.Fill.BackgroundColor = XLColor.FromArgb(39, 174, 96);
                 hCell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-                hCell.Style.Alignment.Vertical   = XLAlignmentVerticalValues.Center;
+                hCell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
                 hCell.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
             }
             ws2.Row(4).Height = 22;
@@ -407,15 +410,15 @@ namespace QuanLyPhongTro.Controllers
                     ? XLColor.FromArgb(234, 250, 241)
                     : XLColor.White;
 
-                ws2.Cell(dRow, 1).Value  = dstt++;
-                ws2.Cell(dRow, 2).Value  = c.Room?.Name    ?? "";
-                ws2.Cell(dRow, 3).Value  = c.User?.FullName ?? "";
-                ws2.Cell(dRow, 4).Value  = c.StartDate;
-                ws2.Cell(dRow, 5).Value  = c.EndDate;
-                ws2.Cell(dRow, 6).Value  = c.MonthlyRent;
-                ws2.Cell(dRow, 7).Value  = months;
-                ws2.Cell(dRow, 8).Value  = contrib;
-                ws2.Cell(dRow, 9).Value  = c.IsActive ? "Hiệu lực" : "Đã kết thúc";
+                ws2.Cell(dRow, 1).Value = dstt++;
+                ws2.Cell(dRow, 2).Value = c.Room?.Name ?? "";
+                ws2.Cell(dRow, 3).Value = c.User?.FullName ?? "";
+                ws2.Cell(dRow, 4).Value = c.StartDate;
+                ws2.Cell(dRow, 5).Value = c.EndDate;
+                ws2.Cell(dRow, 6).Value = c.MonthlyRent;
+                ws2.Cell(dRow, 7).Value = months;
+                ws2.Cell(dRow, 8).Value = contrib;
+                ws2.Cell(dRow, 9).Value = c.IsActive ? "Hiệu lực" : "Đã kết thúc";
 
                 ws2.Cell(dRow, 4).Style.NumberFormat.Format = "dd/mm/yyyy";
                 ws2.Cell(dRow, 5).Style.NumberFormat.Format = "dd/mm/yyyy";
@@ -426,7 +429,7 @@ namespace QuanLyPhongTro.Controllers
                 {
                     ws2.Cell(dRow, col).Style.Fill.BackgroundColor = bg;
                     ws2.Cell(dRow, col).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-                    ws2.Cell(dRow, col).Style.Alignment.Vertical   = XLAlignmentVerticalValues.Center;
+                    ws2.Cell(dRow, col).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
                 }
                 ws2.Cell(dRow, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
                 ws2.Cell(dRow, 7).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;

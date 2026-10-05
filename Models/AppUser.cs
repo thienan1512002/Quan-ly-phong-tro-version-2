@@ -36,5 +36,7 @@ namespace QuanLyPhongTro.Models
         // Navigation properties
         public ICollection<RentalRequest> RentalRequests { get; set; } = new List<RentalRequest>();
         public ICollection<Contract> Contracts { get; set; } = new List<Contract>();
+        public ICollection<MaintenanceRequest> MaintenanceRequests { get; set; } = new List<MaintenanceRequest>();
+        public ICollection<UserNotification> Notifications { get; set; } = new List<UserNotification>();
     }
 }

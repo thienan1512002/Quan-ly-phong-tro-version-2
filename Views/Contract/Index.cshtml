@@ -3,120 +3,250 @@
     ViewData["Title"] = "Quản lý hợp đồng";
 }
 
+<div class="contract-page">
 <!-- Header -->
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="mb-0"><i class="fas fa-file-contract me-2 text-success"></i>Hợp đồng thuê phòng</h4>
-    <div class="d-flex gap-2">
-        <button id="btnSeed" class="btn btn-warning btn-sm" title="Seed 10.000 hợp đồng giả để test hiệu năng">
-            <i class="fas fa-database me-1"></i> Seed 10k Data
-        </button>
-        <a asp-action="Create" class="btn btn-success">
-            <i class="fas fa-plus me-1"></i> Tạo hợp đồng mới
-        </a>
+<div class="contract-titlebar">
+    <div class="contract-title">
+        <span class="title-icon"><i class="fas fa-file-contract"></i></span>
+        <div>
+            <h4>Hợp đồng thuê phòng</h4>
+            <div class="page-subtitle">Quản lý hợp đồng, thời hạn thuê, doanh thu và thao tác gia hạn/kết thúc.</div>
+        </div>
     </div>
+    <a asp-action="Create" class="btn btn-success">
+        <i class="fas fa-plus me-1"></i> Tạo hợp đồng mới
+    </a>
 </div>
 
 <!-- Stat cards -->
 <div class="row g-3 mb-3">
-    <div class="col-6 col-md-3">
-        <div class="card h-100 stat-filter-card" id="cardTotal" role="button" title="Xem tất cả hợp đồng">
-            <div class="card-body d-flex align-items-center gap-3 py-3">
-                <div class="rounded-3 d-flex align-items-center justify-content-center text-white bg-primary"
-                     style="width:48px;height:48px;font-size:1.3rem;flex-shrink:0">
-                    <i class="fas fa-file-contract"></i>
-                </div>
+    <div class="col-6 col-xl-3">
+        <div class="card h-100 contract-stat-card stat-filter-card" id="cardTotal" role="button" title="Xem tất cả hợp đồng">
+            <div class="card-body">
+                <span class="contract-stat-icon text-primary"><i class="fas fa-file-contract"></i></span>
                 <div>
-                    <div class="text-muted small">Tổng hợp đồng</div>
-                    <div class="h4 mb-0 fw-bold" id="statTotal">—</div>
+                    <div class="contract-stat-label">Tổng hợp đồng</div>
+                    <div class="contract-stat-value text-primary" id="statTotal">—</div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="card h-100 stat-filter-card" id="cardActive" role="button" title="Lọc hợp đồng đang hiệu lực">
-            <div class="card-body d-flex align-items-center gap-3 py-3">
-                <div class="rounded-3 d-flex align-items-center justify-content-center text-white bg-success"
-                     style="width:48px;height:48px;font-size:1.3rem;flex-shrink:0">
-                    <i class="fas fa-check-circle"></i>
-                </div>
+    <div class="col-6 col-xl-3">
+        <div class="card h-100 contract-stat-card stat-filter-card" id="cardActive" role="button" title="Lọc hợp đồng đang hiệu lực">
+            <div class="card-body">
+                <span class="contract-stat-icon text-success"><i class="fas fa-check-circle"></i></span>
                 <div>
-                    <div class="text-muted small">Đang hiệu lực</div>
-                    <div class="h4 mb-0 fw-bold text-success" id="statActive">—</div>
+                    <div class="contract-stat-label">Đang hiệu lực</div>
+                    <div class="contract-stat-value text-success" id="statActive">—</div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="card h-100 stat-filter-card" id="cardEnded" role="button" title="Lọc hợp đồng đã kết thúc">
-            <div class="card-body d-flex align-items-center gap-3 py-3">
-                <div class="rounded-3 d-flex align-items-center justify-content-center text-white bg-secondary"
-                     style="width:48px;height:48px;font-size:1.3rem;flex-shrink:0">
-                    <i class="fas fa-stop-circle"></i>
-                </div>
+    <div class="col-6 col-xl-3">
+        <div class="card h-100 contract-stat-card stat-filter-card" id="cardEnded" role="button" title="Lọc hợp đồng đã kết thúc">
+            <div class="card-body">
+                <span class="contract-stat-icon text-secondary"><i class="fas fa-stop-circle"></i></span>
                 <div>
-                    <div class="text-muted small">Đã kết thúc</div>
-                    <div class="h4 mb-0 fw-bold text-secondary" id="statEnded">—</div>
+                    <div class="contract-stat-label">Đã kết thúc</div>
+                    <div class="contract-stat-value text-secondary" id="statEnded">—</div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="card h-100">
-            <div class="card-body d-flex align-items-center gap-3 py-3">
-                <div class="rounded-3 d-flex align-items-center justify-content-center text-white bg-warning"
-                     style="width:48px;height:48px;font-size:1.3rem;flex-shrink:0">
-                    <i class="fas fa-money-bill-wave"></i>
-                </div>
+    <div class="col-6 col-xl-3">
+        <div class="card h-100 contract-stat-card">
+            <div class="card-body">
+                <span class="contract-stat-icon text-warning"><i class="fas fa-money-bill-wave"></i></span>
                 <div>
-                    <div class="text-muted small">Doanh thu/tháng</div>
-                    <div class="fw-bold text-warning" id="statRevenue" style="font-size:1rem">—</div>
+                    <div class="contract-stat-label">Doanh thu/tháng</div>
+                    <div class="contract-stat-value text-warning" id="statRevenue" style="font-size:1.05rem">—</div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Bộ lọc phòng -->
-<div class="d-flex align-items-center gap-2 mb-2">
-    <span class="text-muted small"><i class="fas fa-door-open me-1"></i>Lọc phòng:</span>
-    <div id="roomFilterBox" style="width:280px"></div>
-    <button id="btnClearRoomFilter" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:12px;display:none" onclick="clearRoomFilter()">
-        <i class="fas fa-times me-1"></i>Xóa
-    </button>
-</div>
-
-<!-- Active filter banner -->
-<div id="activeFilterBar" style="display:none" class="d-flex align-items-center gap-2 mb-2 px-1">
-    <span class="text-muted small"><i class="fas fa-filter me-1"></i>Đang lọc:</span>
-    <span id="activeFilterLabel" class="badge rounded-pill" style="font-size:13px;padding:5px 12px"></span>
-    <button id="btnClearFilter" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:12px" onclick="clearStatFilter()">
-        <i class="fas fa-times me-1"></i>Xóa bộ lọc
-    </button>
+<div class="contract-filterbar">
+    <div class="filter-room">
+        <span class="filter-label"><i class="fas fa-door-open me-1"></i>Lọc phòng</span>
+        <div id="roomFilterBox" class="room-filter-box"></div>
+        <button id="btnClearRoomFilter" class="btn btn-sm btn-outline-secondary" style="display:none" onclick="clearRoomFilter()">
+            <i class="fas fa-times me-1"></i>Xóa
+        </button>
+    </div>
+    <div id="activeFilterBar" style="display:none" class="active-filter-chip">
+        <span class="text-muted small"><i class="fas fa-filter me-1"></i>Đang lọc</span>
+        <span id="activeFilterLabel" class="badge rounded-pill"></span>
+        <button id="btnClearFilter" class="btn btn-sm btn-outline-secondary" onclick="clearStatFilter()">
+            <i class="fas fa-times me-1"></i>Bỏ lọc
+        </button>
+    </div>
 </div>
 
 <!-- DataGrid -->
-<div class="card">
-    <div class="card-body p-0">
-        <div id="contractGrid"></div>
-    </div>
+<div class="contract-grid-shell">
+    <div id="contractGrid"></div>
+</div>
 </div>
 
 @Html.AntiForgeryToken()
 
 @section Scripts {
 <style>
+    .contract-page {
+        max-width: 1480px;
+        margin: 0 auto;
+    }
+
+    .contract-titlebar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 22px;
+    }
+
+    .contract-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .contract-title h4 {
+        margin: 0;
+        color: #172033;
+        font-weight: 750;
+    }
+
+    .contract-title .title-icon {
+        width: 38px;
+        height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background: #ecfdf3;
+        color: #079455;
+    }
+
+    .contract-stat-card .card-body {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 16px 18px;
+    }
+
+    .contract-stat-icon {
+        width: 42px;
+        height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background: #f2f4f7;
+        flex-shrink: 0;
+    }
+
+    .contract-stat-label {
+        color: #667085;
+        font-size: .82rem;
+        font-weight: 600;
+    }
+
+    .contract-stat-value {
+        margin-top: 5px;
+        font-size: 1.45rem;
+        line-height: 1;
+        font-weight: 800;
+    }
+
+    .contract-filterbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin: 4px 0 14px;
+        padding: 12px 14px;
+        border: 1px solid #e5e9f2;
+        border-radius: 8px;
+        background: rgba(255,255,255,.78);
+        box-shadow: 0 4px 14px rgba(17, 24, 39, .04);
+    }
+
+    .filter-room,
+    .active-filter-chip {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .filter-label {
+        color: #667085;
+        font-size: .84rem;
+        font-weight: 700;
+    }
+
+    .room-filter-box {
+        width: 290px;
+        min-width: 220px;
+    }
+
+    .active-filter-chip .badge {
+        font-size: 12px;
+        padding: 6px 11px;
+    }
+
+    .contract-grid-shell {
+        overflow: hidden;
+        border: 1px solid #e5e9f2;
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: 0 14px 34px rgba(17, 24, 39, .08);
+    }
+
+    .contract-grid-shell .dx-datagrid {
+        background: #fff;
+    }
+
+    .contract-grid-shell .dx-datagrid-headers {
+        border-bottom: 1px solid #e5e9f2;
+    }
+
+    .contract-grid-shell .dx-header-row > td {
+        padding-top: 12px;
+        padding-bottom: 12px;
+        color: #344054;
+        font-weight: 800;
+    }
+
+    .contract-grid-shell .dx-data-row > td {
+        padding-top: 12px;
+        padding-bottom: 12px;
+        vertical-align: middle;
+    }
+
+    .contract-grid-shell .dx-row-alt > td {
+        background: #fbfcff !important;
+    }
+
+    .contract-grid-shell .dx-datagrid-search-panel {
+        border-radius: 8px;
+    }
+
     .detail-panel { padding: 16px 20px; background: #f8fafc; }
     .detail-card  { background: #fff; border-radius: 10px; border: 1px solid #e5e7eb; padding: 16px; }
     .detail-card .dc-title { font-weight: 700; font-size: 13px; margin-bottom: 10px; display: flex; align-items: center; gap: 7px; }
     .detail-row   { display: flex; flex-wrap: wrap; gap: 6px 20px; }
     .detail-item  { font-size: 12px; color: #374151; min-width: 180px; }
     .detail-item .lbl { color: #9ca3af; display: block; font-size: 11px; }
-    .stat-filter-card { cursor: pointer; transition: box-shadow .15s, border-color .15s; }
-    .stat-filter-card:hover { box-shadow: 0 0 0 2px #6c757d55; }
-    .stat-filter-card.active-card { box-shadow: 0 0 0 2.5px currentColor; outline: 2.5px solid; }
-    #cardTotal.active-card  { outline-color: #0d6efd; }
-    #cardActive.active-card { outline-color: #198754; }
-    #cardEnded.active-card  { outline-color: #6c757d; }
+    .stat-filter-card { cursor: pointer; transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease; }
+    .stat-filter-card:hover { transform: translateY(-1px); box-shadow: 0 12px 28px rgba(17,24,39,.1) !important; }
+    .stat-filter-card.active-card { border-color: currentColor !important; box-shadow: 0 0 0 3px rgba(37,86,217,.12) !important; }
+    #cardTotal.active-card  { color: #1f7a5a; }
+    #cardActive.active-card { color: #079455; }
+    #cardEnded.active-card  { color: #667085; }
     .stat-updating { opacity: .6; transition: opacity .15s; }
     /* ── Info-group layout (master-detail) ── */
     .ig-wrap            { padding: 18px 20px; }
@@ -133,6 +263,21 @@
     .ig-val.money       { color:#16a34a; font-weight:700; }
     .ig-val.danger      { color:#dc3545; font-weight:600; }
     .ig-val.success     { color:#198754; font-weight:600; }
+
+    @@media (max-width: 767.98px) {
+        .contract-titlebar {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .contract-titlebar .btn {
+            width: 100%;
+        }
+
+        .room-filter-box {
+            width: 100%;
+        }
+    }
 </style>
 <script>
     const _token = document.querySelector('input[name="__RequestVerificationToken"]').value;
@@ -291,16 +436,23 @@
                         }
                     },
                     {
-                        caption: "Thao tác", width: 170, alignment: "center",
+                        caption: "Thao tác", width: 155, alignment: "center",
                         cellTemplate(container, opt) {
                             const wrap = $('<div style="display:flex;align-items:center;justify-content:center;gap:4px">');
                             $('<a class="btn btn-sm btn-info">')
                                 .attr('href', '/Contract/Details/' + opt.data.id)
-                                .html('<i class="fas fa-eye me-1"></i>Chi tiết')
+                                .attr('title', 'Chi tiết')
+                                .html('<i class="fas fa-eye"></i>')
                                 .appendTo(wrap);
                             if (opt.data.isActive) {
+                                $('<button class="btn btn-sm btn-outline-primary">')
+                                    .attr('title', 'Gia hạn')
+                                    .html('<i class="fas fa-rotate-right"></i>')
+                                    .on('click', () => openRenewContract(opt.data))
+                                    .appendTo(wrap);
                                 $('<button class="btn btn-sm btn-danger">')
-                                    .html('<i class="fas fa-stop me-1"></i>Kết thúc')
+                                    .attr('title', 'Kết thúc')
+                                    .html('<i class="fas fa-stop"></i>')
                                     .on('click', () => {
                                         Swal.fire({
                                             title: 'Kết thúc hợp đồng?',
@@ -405,6 +557,87 @@
             });
         });
    
+    function parseViDate(s) {
+        if (!s) return null;
+        const parts = s.split('/');
+        if (parts.length !== 3) return null;
+        return new Date(+parts[2], +parts[1] - 1, +parts[0]);
+    }
+
+    function fmtIsoDate(d) {
+        return d.getFullYear() + '-' +
+            String(d.getMonth() + 1).padStart(2, '0') + '-' +
+            String(d.getDate()).padStart(2, '0');
+    }
+
+    async function openRenewContract(row) {
+        const currentEnd = parseViDate(row.endDate) || new Date();
+        const suggestedEnd = new Date(currentEnd);
+        suggestedEnd.setMonth(suggestedEnd.getMonth() + 6);
+
+        const result = await Swal.fire({
+            title: 'Gia hạn hợp đồng',
+            html:
+                '<div class="text-start">' +
+                '<div class="small text-muted mb-2">Phòng: <strong>' + row.roomName + '</strong></div>' +
+                '<label class="form-label fw-semibold">Ngày kết thúc hiện tại</label>' +
+                '<input class="form-control mb-3" value="' + row.endDate + '" disabled>' +
+                '<label class="form-label fw-semibold">Ngày kết thúc mới</label>' +
+                '<input id="renewEndDate" type="date" class="form-control mb-3" value="' + fmtIsoDate(suggestedEnd) + '" min="' + fmtIsoDate(new Date(currentEnd.getFullYear(), currentEnd.getMonth(), currentEnd.getDate() + 1)) + '">' +
+                '<label class="form-label fw-semibold">Giá thuê mới (VNĐ/tháng)</label>' +
+                '<input id="renewRent" type="number" min="1" step="100000" class="form-control mb-3" value="' + Math.round(row.monthlyRent || 0) + '">' +
+                '<label class="form-label fw-semibold">Ghi chú</label>' +
+                '<textarea id="renewNote" class="form-control" rows="3" placeholder="VD: Gia hạn thêm 6 tháng, giữ nguyên điều khoản..."></textarea>' +
+                '</div>',
+            imageUrl: window._swalConfirmImg,
+            imageWidth: 80,
+            imageHeight: 80,
+            showCancelButton: true,
+            confirmButtonText: 'Gia hạn',
+            cancelButtonText: 'Hủy',
+            confirmButtonColor: '#1f7a5a',
+            preConfirm: () => {
+                const endDate = document.getElementById('renewEndDate').value;
+                const rent = document.getElementById('renewRent').value;
+                if (!endDate) {
+                    Swal.showValidationMessage('Vui lòng chọn ngày kết thúc mới');
+                    return false;
+                }
+                if (new Date(endDate) <= currentEnd) {
+                    Swal.showValidationMessage('Ngày kết thúc mới phải sau ngày kết thúc hiện tại');
+                    return false;
+                }
+                if (rent && Number(rent) <= 0) {
+                    Swal.showValidationMessage('Giá thuê mới phải lớn hơn 0');
+                    return false;
+                }
+                return {
+                    endDate,
+                    rent,
+                    note: document.getElementById('renewNote').value || ''
+                };
+            }
+        });
+
+        if (!result.isConfirmed) return;
+
+        const body = new URLSearchParams({
+            __RequestVerificationToken: _token,
+            ContractId: row.id,
+            NewEndDate: result.value.endDate,
+            Note: result.value.note
+        });
+        if (result.value.rent) body.append('MonthlyRent', result.value.rent);
+
+        const res = await fetch('/Contract/Renew', { method: 'POST', body });
+        const json = await res.json();
+        if (json.success) {
+            $("#contractGrid").dxDataGrid("instance").getDataSource().reload();
+            Swal.fire({ icon: 'success', title: 'Thành công', text: json.message, timer: 2200, showConfirmButton: false });
+        } else {
+            Swal.fire({ icon: 'error', title: 'Không thể gia hạn', html: json.message });
+        }
+    }
 
     async function terminateContract(id) {
         const body = new URLSearchParams({ __RequestVerificationToken: _token });
@@ -418,36 +651,6 @@
         }
     }
 
-    document.getElementById('btnSeed').addEventListener('click', async function () {
-        const confirmed = await Swal.fire({
-            title: 'Seed 10k hợp đồng?',
-            text: 'Seed ~10.000 hợp đồng giả vào DB để test hiệu năng (chỉ seed thêm nếu DB chưa đủ 10k).',
-            imageUrl: window._swalConfirmImg, imageWidth: 80, imageHeight: 80,
-            showCancelButton: true,
-            confirmButtonColor: '#ffc107',
-            confirmButtonText: 'Seed',
-            cancelButtonText: 'Hủy'
-        });
-        if (!confirmed.isConfirmed) return;
-        const btn = this;
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang seed...';
-        try {
-            const body = new URLSearchParams({ __RequestVerificationToken: _token });
-            const res  = await fetch('/Contract/SeedData', { method: 'POST', body });
-            const text = await res.text();
-            let json;
-            try { json = JSON.parse(text); }
-            catch { Swal.fire({ icon: 'error', title: 'Lỗi server', text: text.substring(0, 300) }); return; }
-            Swal.fire({ icon: json.success ? 'success' : 'error', title: json.success ? 'Thành công' : 'Lỗi', text: json.message });
-            if (json.success) $("#contractGrid").dxDataGrid("instance").getDataSource().reload();
-        } catch (e) {
-            Swal.fire({ icon: 'error', title: 'Lỗi', text: e.message });
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-database me-1"></i> Seed 10k Data';
-        }
-    });
 </script>
 }
 

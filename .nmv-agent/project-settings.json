@@ -1,0 +1,19 @@
+﻿{
+  "projectName": "Quản lý phòng trọ",
+  "solution": "",
+  "build": {
+    "restore": "dotnet restore",
+    "build": "dotnet build --no-restore",
+    "test": "dotnet test --no-build"
+  },
+  "qualityGate": {
+    "requireBuild": true,
+    "requireTests": true,
+    "requireFormatCheck": false
+  },
+  "git": {
+    "protectedBranches": ["main", "master", "develop"],
+    "allowAgentMerge": false
+  }
+}
+

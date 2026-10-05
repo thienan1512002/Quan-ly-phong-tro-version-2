@@ -1,0 +1,25 @@
+﻿{
+    "projectName":  "Quản lý phòng trọ",
+    "template":  "NMV-Codex-Agent-Platform",
+    "managedFiles":  [
+                         "AGENTS.md",
+                         ".agents\\skills\\aspnet-core-mvc\\SKILL.md",
+                         ".agents\\skills\\code-review\\SKILL.md",
+                         ".agents\\skills\\devextreme-ui\\SKILL.md",
+                         ".agents\\skills\\dotnet-backend\\SKILL.md",
+                         ".agents\\skills\\incident-fix\\SKILL.md",
+                         ".agents\\skills\\integration-testing\\SKILL.md",
+                         ".agents\\skills\\pull-request\\SKILL.md",
+                         ".agents\\skills\\repository-analysis\\SKILL.md",
+                         ".agents\\skills\\security-review\\SKILL.md",
+                         ".agents\\skills\\sql-server\\SKILL.md",
+                         ".agents\\skills\\unit-testing\\SKILL.md",
+                         ".codex\\config.toml.example",
+                         ".github\\pull_request_template.md",
+                         ".github\\workflows\\nmv-pr-validation.yml",
+                         ".nmv-agent\\project-settings.json",
+                         ".nmv-agent\\scripts\\local-quality-gate.ps1",
+                         ".nmv-agent\\scripts\\preflight-guard.ps1"
+                     ],
+    "installedAt":  "2026-10-05T21:21:43.7723747+07:00"
+}

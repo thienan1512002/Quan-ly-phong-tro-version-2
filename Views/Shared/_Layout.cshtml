@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Quản Lý Phòng Trọ</title>
+    <title>@ViewData["Title"] - StayFlow</title>
     <!-- CoreUI CSS -->
     <link href="https://unpkg.com/@@coreui/coreui@5.4.0/dist/css/coreui.min.css" rel="stylesheet" />
     <!-- DevExtreme CSS -->
@@ -31,7 +31,7 @@
 
         .sidebar {
         min-height: 100vh;
-        background: #3c4b64;
+        background: #fffdf8;
         }
 
         .sidebar .nav-link {
@@ -105,15 +105,82 @@
         color: #fff !important;
         }
     </style>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body class="dx-viewport">
     @if (User.Identity?.IsAuthenticated == true)
     {
-        <div class="d-flex">
+        <header class="mobile-topbar d-md-none">
+            <a class="mobile-brand" asp-controller="Dashboard" asp-action="Index">
+                <i class="fas fa-layer-group"></i>
+                <span>StayFlow</span>
+            </a>
+            <button class="btn btn-light btn-sm" type="button" data-coreui-toggle="collapse" data-coreui-target="#mobileNav"
+                    aria-controls="mobileNav" aria-expanded="false" aria-label="Mở menu">
+                <i class="fas fa-bars"></i>
+            </button>
+        </header>
+        <div class="collapse mobile-nav d-md-none" id="mobileNav">
+            <a class="mobile-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")"
+               asp-controller="Dashboard" asp-action="Index">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+            @if (User.IsInRole("Admin"))
+            {
+                <a class="mobile-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Room" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")"
+                   asp-controller="Room" asp-action="Index">
+                    <i class="fas fa-door-open"></i> Quản lý phòng
+                </a>
+            }
+            <a class="mobile-nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "SearchPage" ? "active" : "")"
+               asp-controller="Room" asp-action="SearchPage">
+                <i class="fas fa-search"></i> Tìm kiếm phòng
+            </a>
+            <a class="mobile-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "RentalRequest" ? "active" : "")"
+               asp-controller="RentalRequest" asp-action="Index">
+                <i class="fas fa-clipboard-list"></i> Yêu cầu thuê
+            </a>
+            <a class="mobile-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Maintenance" ? "active" : "")"
+               asp-controller="Maintenance" asp-action="Index">
+                <i class="fas fa-screwdriver-wrench"></i> @(User.IsInRole("Admin") ? "Quản lý sửa chữa" : "Yêu cầu sửa chữa")
+            </a>
+            <a class="mobile-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Notification" ? "active" : "")"
+               asp-controller="Notification" asp-action="Index">
+                <i class="fas fa-bell"></i> Thông báo
+                @if (User.IsInRole("User")) { <span class="badge bg-danger notification-count-badge d-none">0</span> }
+            </a>
+            <a class="mobile-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Utility" ? "active" : "")"
+               asp-controller="Utility" asp-action="Index">
+                <i class="fas fa-chart-column"></i> Điện nước theo tháng
+            </a>
+            @if (User.IsInRole("Admin"))
+            {
+                <a class="mobile-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Contract" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")"
+                   asp-controller="Contract" asp-action="Index">
+                    <i class="fas fa-file-contract"></i> Hợp đồng
+                </a>
+                <a class="mobile-nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "CalendarView" ? "active" : "")"
+                   asp-controller="Contract" asp-action="CalendarView">
+                    <i class="fas fa-calendar-alt"></i> Lịch thuê phòng
+                </a>
+                <a class="mobile-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Report" ? "active" : "")"
+                   asp-controller="Report" asp-action="Index">
+                    <i class="fas fa-chart-line"></i> Báo cáo
+                </a>
+            }
+            <form asp-controller="Account" asp-action="Logout" method="post" class="mobile-nav-form">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="mobile-nav-link mobile-nav-button">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </button>
+            </form>
+        </div>
+
+        <div class="app-shell d-flex">
             <!-- Sidebar -->
             <nav class="sidebar d-none d-md-flex flex-column" style="width:250px; min-width:250px;">
                 <div class="sidebar-brand">
-                    <i class="fas fa-home"></i> Phòng Trọ
+                    <i class="fas fa-layer-group"></i> StayFlow
                 </div>
                 <ul class="nav flex-column mt-2">
                     <li class="nav-item">
@@ -141,6 +208,25 @@
                         <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "RentalRequest" ? "active" : "")"
                            asp-controller="RentalRequest" asp-action="Index">
                             <i class="fas fa-clipboard-list"></i> Yêu cầu thuê
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Maintenance" ? "active" : "")"
+                           asp-controller="Maintenance" asp-action="Index">
+                            <i class="fas fa-screwdriver-wrench"></i> @(User.IsInRole("Admin") ? "Quản lý sửa chữa" : "Yêu cầu sửa chữa")
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Notification" ? "active" : "")"
+                           asp-controller="Notification" asp-action="Index">
+                            <i class="fas fa-bell"></i> Thông báo
+                            @if (User.IsInRole("User")) { <span class="badge bg-danger ms-1 notification-count-badge d-none">0</span> }
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Utility" ? "active" : "")"
+                           asp-controller="Utility" asp-action="Index">
+                            <i class="fas fa-chart-column"></i> Điện nước theo tháng
                         </a>
                     </li>
                     @if (User.IsInRole("Admin"))
@@ -237,6 +323,12 @@
             showToast("Yêu cầu mới!", userName+" muốn thuê phòng <b>"+roomName+"</b>");
             });
 
+            // Event: chủ trọ gửi thông báo mới cho người thuê
+            connection.on("ownerNotification", function (title) {
+            showToast("Thông báo từ chủ trọ", escapeHtml(title));
+            refreshNotificationCount();
+            });
+
             connection.start()
             .then(() => console.log("✅ SignalR connected"))
             .catch(err => console.error("❌ SignalR error:", err));
@@ -257,6 +349,29 @@
             document.getElementById("notificationArea").appendChild(el);
             setTimeout(() => el.remove(), 5000);
             }
+
+            function escapeHtml(value) {
+            const element=document.createElement('div');
+            element.textContent=value ?? '';
+            return element.innerHTML;
+            }
+
+            function refreshNotificationCount() {
+            const badges=document.querySelectorAll('.notification-count-badge');
+            if (!badges.length) return;
+            fetch('/Notification/UnreadCount', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(response => response.ok ? response.json() : null)
+            .then(data => {
+            if (!data) return;
+            badges.forEach(badge => {
+            badge.textContent=data.count;
+            badge.classList.toggle('d-none', data.count===0);
+            });
+            })
+            .catch(() => {});
+            }
+
+            refreshNotificationCount();
         </script>
     }
 

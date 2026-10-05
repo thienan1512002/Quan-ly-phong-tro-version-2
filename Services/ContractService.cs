@@ -134,6 +134,47 @@ namespace QuanLyPhongTro.Services
             return true;
         }
 
+        public async Task<(bool success, string message, Contract? contract)> RenewAsync(ContractRenewViewModel model)
+        {
+            var contract = await _context.Contracts
+                .Include(c => c.Room)
+                .Include(c => c.User)
+                .FirstOrDefaultAsync(c => c.Id == model.ContractId);
+
+            if (contract == null)
+                return (false, "Không tìm thấy hợp đồng", null);
+
+            if (!contract.IsActive)
+                return (false, "Chỉ có thể gia hạn hợp đồng đang hiệu lực", contract);
+
+            var newEndDate = model.NewEndDate.Date;
+            if (newEndDate <= contract.EndDate.Date)
+                return (false, "Ngày kết thúc mới phải sau ngày kết thúc hiện tại", contract);
+
+            if (model.MonthlyRent.HasValue && model.MonthlyRent.Value <= 0)
+                return (false, "Giá thuê mới phải lớn hơn 0", contract);
+
+            var oldEndDate = contract.EndDate.Date;
+            contract.EndDate = newEndDate;
+
+            if (model.MonthlyRent.HasValue)
+                contract.MonthlyRent = model.MonthlyRent.Value;
+
+            if (!string.IsNullOrWhiteSpace(model.Note))
+            {
+                var renewNote = $"Gia hạn từ {oldEndDate:dd/MM/yyyy} đến {newEndDate:dd/MM/yyyy}: {model.Note.Trim()}";
+                contract.Note = string.IsNullOrWhiteSpace(contract.Note)
+                    ? renewNote
+                    : $"{contract.Note}\n{renewNote}";
+            }
+
+            if (contract.Room != null)
+                contract.Room.Status = RoomStatus.DaThue;
+
+            await _context.SaveChangesAsync();
+            return (true, "Gia hạn hợp đồng thành công", contract);
+        }
+
         public async Task<(int within30, int within60, int within90)> GetExpiringCountsAsync()
         {
             var today = DateTime.Today;

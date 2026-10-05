@@ -198,8 +198,12 @@
                     @{int stt = 1;}
                     @foreach (var c in Model)
                     {
-                        var daysLeft  = (c.EndDate - DateTime.Today).Days;
-                        var rowCls    = !c.IsActive ? "table-secondary" : daysLeft <= 30 ? "table-danger" : "";
+                        var today     = DateTime.Today;
+                        var daysLeft  = (c.EndDate - today).Days;
+                        var isExpiringSoon = c.IsActive
+                            && c.EndDate >= today
+                            && c.EndDate <= today.AddMonths(1);
+                        var rowCls    = !c.IsActive ? "table-secondary" : isExpiringSoon ? "table-danger" : "";
                         var statusBadge = c.IsActive ? "<span class='badge bg-success'>Hiệu lực</span>"
                                                      : "<span class='badge bg-secondary'>Kết thúc</span>";
                         <tr class="@rowCls">
@@ -209,9 +213,9 @@
                             <td>@(c.User?.FullName ?? "—")</td>
                             <td class="text-muted small">@(c.User?.PhoneNumber ?? "—")</td>
                             <td class="text-center">@c.StartDate.ToString("dd/MM/yyyy")</td>
-                            <td class="text-center @(c.IsActive && daysLeft <= 30 ? "text-danger fw-bold" : "")">
+                            <td class="text-center @(isExpiringSoon ? "text-danger fw-bold" : "")">
                                 @c.EndDate.ToString("dd/MM/yyyy")
-                                @if (c.IsActive && daysLeft <= 30 && daysLeft >= 0)
+                                @if (isExpiringSoon)
                                 {
                                     <br/><span class="badge bg-danger" style="font-size:10px">Còn @daysLeft ngày</span>
                                 }

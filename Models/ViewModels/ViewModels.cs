@@ -148,4 +148,22 @@ namespace QuanLyPhongTro.Models.ViewModels
         [Display(Name = "Chỉ số nước đầu kỳ")]
         public int? WaterMeter { get; set; }
     }
+
+    public class ContractRenewViewModel
+    {
+        [Required]
+        public int ContractId { get; set; }
+
+        [Required(ErrorMessage = "Vui lòng chọn ngày kết thúc mới")]
+        [Display(Name = "Ngày kết thúc mới")]
+        [DataType(DataType.Date)]
+        public DateTime NewEndDate { get; set; }
+
+        [Display(Name = "Giá thuê mới")]
+        public decimal? MonthlyRent { get; set; }
+
+        [Display(Name = "Ghi chú gia hạn")]
+        [MaxLength(500, ErrorMessage = "Ghi chú tối đa 500 ký tự")]
+        public string? Note { get; set; }
+    }
 }

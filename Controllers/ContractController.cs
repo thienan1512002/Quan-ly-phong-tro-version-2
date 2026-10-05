@@ -360,6 +360,39 @@ namespace QuanLyPhongTro.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // POST: /Contract/Renew
+        // Gia hạn hợp đồng đang hiệu lực
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Renew(ContractRenewViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .Where(m => !string.IsNullOrWhiteSpace(m))
+                    .ToList();
+
+                return Json(new
+                {
+                    success = false,
+                    message = errors.Count > 0 ? string.Join("<br>", errors) : "Dữ liệu gia hạn không hợp lệ"
+                });
+            }
+
+            var (success, message, contract) = await _contractService.RenewAsync(model);
+            return Json(new
+            {
+                success,
+                message,
+                endDate = contract?.EndDate.ToString("yyyy-MM-dd"),
+                endDateDisplay = contract?.EndDate.ToString("dd/MM/yyyy"),
+                monthlyRent = contract?.MonthlyRent,
+                monthlyRentFormatted = contract != null ? contract.MonthlyRent.ToString("N0") + " VNĐ" : null
+            });
+        }
+
         // Helper: tạo lại dropdowns
         private void PrepareDropdowns()
         {

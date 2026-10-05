@@ -9,23 +9,24 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Đăng nhập - Quản Lý Phòng Trọ</title>
+    <title>Đăng nhập - StayFlow</title>
     <link href="https://unpkg.com/@@coreui/coreui@5.4.0/dist/css/coreui.min.css" rel="stylesheet" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <style>
-        body { background: linear-gradient(135deg, #3c4b64, #4f5d73); min-height: 100vh; display: flex; align-items: center; }
+        body { background: radial-gradient(circle at 18% 12%, rgba(250,231,220,.62), transparent 30rem), linear-gradient(135deg, #f6f1ea, #dff3e8); min-height: 100vh; display: flex; align-items: center; }
         .login-card { max-width: 400px; width: 100%; margin: 0 auto; }
-        .login-card .card { border: none; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
-        .login-header { background: linear-gradient(135deg, #321fdb, #4f5d73); color: white; padding: 30px; border-radius: 12px 12px 0 0; text-align: center; }
+        .login-card .card { border: 1px solid #e5ded2; border-radius: 8px; box-shadow: 0 22px 56px rgba(72,58,40,.18); }
+        .login-header { background: linear-gradient(135deg, #1f7a5a, #c96f4a); color: white; padding: 30px; border-radius: 8px 8px 0 0; text-align: center; }
     </style>
 </head>
 <body>
     <div class="login-card px-3">
         <div class="card">
             <div class="login-header">
-                <i class="fas fa-home fa-3x mb-3"></i>
-                <h4 class="mb-0">Quản Lý Phòng Trọ</h4>
-                <p class="mb-0 opacity-75">Đăng nhập để tiếp tục</p>
+                <i class="fas fa-layer-group fa-3x mb-3"></i>
+                <h4 class="mb-0">StayFlow</h4>
+                <p class="mb-0 opacity-75">Đăng nhập vào không gian quản lý</p>
             </div>
             <div class="card-body p-4">
                 <form asp-controller="Account" asp-action="Login" method="post">

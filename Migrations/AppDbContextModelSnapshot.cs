@@ -131,6 +131,63 @@ namespace QuanLyPhongTro.Migrations
                     b.ToTable("Contracts");
                 });
 
+            modelBuilder.Entity("QuanLyPhongTro.Models.MaintenanceRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AdminNote")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RoomId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoomId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("MaintenanceRequests");
+                });
+
             modelBuilder.Entity("QuanLyPhongTro.Models.RentalRequest", b =>
                 {
                     b.Property<int>("Id")
@@ -145,6 +202,9 @@ namespace QuanLyPhongTro.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<decimal?>("Deposit")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("DesiredEndDate")
                         .HasColumnType("datetime2");
@@ -250,6 +310,84 @@ namespace QuanLyPhongTro.Migrations
                     b.ToTable("RoomImages");
                 });
 
+            modelBuilder.Entity("QuanLyPhongTro.Models.UserNotification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("EventDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("nvarchar(160)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserNotifications");
+                });
+
+            modelBuilder.Entity("QuanLyPhongTro.Models.UtilityReading", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("BillingMonth")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("ElectricityUsage")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("RoomId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("WaterUsage")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoomId", "BillingMonth")
+                        .IsUnique();
+
+                    b.ToTable("UtilityReadings");
+                });
+
             modelBuilder.Entity("QuanLyPhongTro.Models.Contract", b =>
                 {
                     b.HasOne("QuanLyPhongTro.Models.Room", "Room")
@@ -260,6 +398,25 @@ namespace QuanLyPhongTro.Migrations
 
                     b.HasOne("QuanLyPhongTro.Models.AppUser", "User")
                         .WithMany("Contracts")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Room");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("QuanLyPhongTro.Models.MaintenanceRequest", b =>
+                {
+                    b.HasOne("QuanLyPhongTro.Models.Room", "Room")
+                        .WithMany("MaintenanceRequests")
+                        .HasForeignKey("RoomId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("QuanLyPhongTro.Models.AppUser", "User")
+                        .WithMany("MaintenanceRequests")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -299,9 +456,35 @@ namespace QuanLyPhongTro.Migrations
                     b.Navigation("Room");
                 });
 
+            modelBuilder.Entity("QuanLyPhongTro.Models.UserNotification", b =>
+                {
+                    b.HasOne("QuanLyPhongTro.Models.AppUser", "User")
+                        .WithMany("Notifications")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("QuanLyPhongTro.Models.UtilityReading", b =>
+                {
+                    b.HasOne("QuanLyPhongTro.Models.Room", "Room")
+                        .WithMany("UtilityReadings")
+                        .HasForeignKey("RoomId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Room");
+                });
+
             modelBuilder.Entity("QuanLyPhongTro.Models.AppUser", b =>
                 {
                     b.Navigation("Contracts");
+
+                    b.Navigation("MaintenanceRequests");
+
+                    b.Navigation("Notifications");
 
                     b.Navigation("RentalRequests");
                 });
@@ -312,7 +495,11 @@ namespace QuanLyPhongTro.Migrations
 
                     b.Navigation("Images");
 
+                    b.Navigation("MaintenanceRequests");
+
                     b.Navigation("RentalRequests");
+
+                    b.Navigation("UtilityReadings");
                 });
 #pragma warning restore 612, 618
         }

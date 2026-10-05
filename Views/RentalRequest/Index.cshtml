@@ -3,8 +3,8 @@
     bool isAdmin = User.IsInRole("Admin");
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="mb-0"><i class="fas fa-clipboard-list me-2 text-warning"></i>
+<div class="page-heading">
+    <h4><i class="fas fa-clipboard-list me-2 text-warning"></i>
         @(isAdmin ? "Quản lý yêu cầu thuê" : "Yêu cầu thuê của tôi")
     </h4>
     @if (!isAdmin)
@@ -36,6 +36,10 @@
     columns.push({dataField: "roomName", caption: "Tên phòng", width: 130});
     columns.push({dataField: "roomAddress", caption: "Địa chỉ",width:240});
     columns.push({
+        dataField: "deposit", caption: "Tiền cọc", width: 140, alignment: "right",
+        customizeText: e => e.value == null ? "—" : new Intl.NumberFormat("vi-VN").format(e.value) + " ₫"
+    });
+    columns.push({
         dataField: "note", caption: "Ghi chú", width: 160,
         customizeText: e => e.value||"—"
     });
@@ -43,7 +47,7 @@
     columns.push({
         dataField: "statusText",
         caption: "Trạng thái",
-        width: 500,
+        width: 180,
         cellTemplate(container, opt) {
             const map={
                 "Chờ duyệt": ["bg-warning text-dark", "⏳"],
@@ -213,6 +217,9 @@
         const desiredRange = (d.desiredStartDate && d.desiredEndDate)
             ? new Date(d.desiredStartDate).toLocaleDateString('vi-VN') + ' → ' + new Date(d.desiredEndDate).toLocaleDateString('vi-VN')
             : null;
+        const depositFmt = d.deposit != null
+            ? new Intl.NumberFormat('vi-VN').format(d.deposit) + ' VNĐ'
+            : null;
         return [
             '<div class="info-group">',
                 '<div class="info-group-title">🏠 Thông tin phòng</div>',
@@ -227,6 +234,7 @@
                 '<div class="info-grid">',
                     ii('Họ tên',            d.userFullName),
                     ii('Ngày mong muốn',    desiredRange),
+                    ii('Tiền cọc đề xuất',  depositFmt, false, 'money'),
                     ii('Ghi chú yêu cầu',   d.note, true),
                 '</div>',
             '</div>'
@@ -313,9 +321,9 @@
                             },
                             {
                                 dataField: "Deposit",
-                                label: { text: "Tiền cọ (VNĐ)" },
+                                label: { text: "Tiền cọc (VNĐ)" },
                                 editorType: "dxNumberBox",
-                                editorOptions: { format: "#,##0", min: 0, stylingMode: "outlined", placeholder: "Không bắt buộc" }
+                                editorOptions: { format: "#,##0", min: 0, stylingMode: "outlined", placeholder: "Theo đề xuất của người thuê" }
                             },
                             {
                                 dataField: "PaymentDay",
@@ -376,7 +384,7 @@
         const endDate   = d.desiredEndDate   ? new Date(d.desiredEndDate)   : inSixMonths;
         return {
             StartDate: startDate, EndDate: endDate,
-            Deposit: null, PaymentDay: null,
+            Deposit: d.deposit ?? null, PaymentDay: null,
             ManagementFee: null, ParkingFee: null,
             ElectricMeter: null, WaterMeter: null,
             Note: ""
