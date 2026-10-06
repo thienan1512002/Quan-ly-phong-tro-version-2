@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using QuanLyPhongTro.Data;
 using QuanLyPhongTro.Hubs;
+using QuanLyPhongTro.Infrastructure.IncidentReporting;
 using QuanLyPhongTro.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,6 +36,9 @@ builder.Services.AddScoped<RoomService>();
 builder.Services.AddScoped<RentalRequestService>();
 builder.Services.AddScoped<ContractService>();
 
+// Báo lỗi ngoài dự kiến qua queue nền, độc lập với luồng nghiệp vụ.
+builder.Services.AddIncidentReporting(builder.Configuration);
+
 // =============================================
 // CẤU HÌNH MIDDLEWARE PIPELINE
 // =============================================
@@ -55,6 +59,9 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+// Nằm bên trong UseExceptionHandler: capture rồi rethrow để giữ response hiện tại.
+app.UseMiddleware<IncidentReportingMiddleware>();
+
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
@@ -69,5 +76,8 @@ app.MapControllerRoute(
 
 // Đăng ký SignalR Hub
 app.MapHub<NotificationHub>("/notificationHub");
+
+// Endpoint cố tình gây lỗi chỉ được đăng ký trong Development.
+app.MapDevelopmentIncidentTestEndpoint();
 
 app.Run();

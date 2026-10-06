@@ -601,13 +601,15 @@ StartDate <= ngày cuối tháng và EndDate >= ngày đầu tháng
 
 ## 16. Kiểm thử và kiểm tra build
 
-Project chưa có unit test hoặc integration test.
+Unit test và integration test cho module báo incident nằm trong `Tests/IncidentReporting/`.
+Integration test dùng TestServer và HTTP handler giả lập, không chạy migration/seed hoặc kết nối database hiện tại.
 
 Kiểm tra tối thiểu:
 
 ```bash
 dotnet restore
 dotnet build
+dotnet test QuanLyPhongTro.sln --no-build
 ```
 
 Checklist thủ công:
@@ -622,6 +624,41 @@ Checklist thủ công:
 8. Admin nhập điện nước; User kiểm tra biểu đồ.
 9. Admin gia hạn và kết thúc hợp đồng.
 10. Xuất và mở kiểm tra hai loại file Excel.
+
+### 16.1. NMV Auto Incident Reporting
+
+Cấu hình `AgentPlatform` trong `appsettings.json` bật báo unhandled application exception của project `ROOM`.
+`ControlPlaneUrl` đang để trống để cấu hình sau. Khi thiếu URL, app vẫn chạy, worker log warning và tạm ngừng reporting.
+Điền URL Control Plane hoạt động rồi khởi động lại app để bật gửi incident.
+Middleware chỉ capture dữ liệu chẩn đoán, enqueue và ném lại exception; trang lỗi `/Home/Error` hiện tại tiếp tục xử lý response.
+Worker gửi JSON tới `{ControlPlaneUrl}/api/incidents` bằng HttpClientFactory, timeout mặc định 10 giây mỗi lần.
+Lỗi mạng, timeout, HTTP 408/429/5xx được thử lại tối đa 3 lần, với backoff 1 và 2 giây. HTTP 4xx khác và redirect không được retry.
+Reporting không chuyển tiếp Authorization/Cookie từ request, không đọc request body/form, không gửi query string.
+Dữ liệu chẩn đoán được che secret đã cấu hình/nhận diện, email và số điện thoại.
+
+Queue giữ tối đa 100 incident trong RAM (`AgentPlatform:QueueCapacity`). Khi đầy, middleware log warning và bỏ incident mới thay vì chờ.
+Queue không bền vững qua restart. Worker chỉ throttle sau khi gửi thành công, theo ErrorType + Endpoint + stack frame ứng dụng đầu tiên,
+với cửa sổ mặc định 10 giây (`AgentPlatform:ThrottleWindowSeconds`). Control Plane tiếp tục deduplicate chính.
+`OperationCanceledException` và `TaskCanceledException` không được báo; có thể thay `IIncidentReportFilter` nếu bổ sung business validation exception.
+Hai field tùy chọn `AgentPlatform:DeploymentVersion` và `AgentPlatform:GitCommit` có thể được cấp từ cấu hình deployment.
+
+Test khi chạy profile Development:
+
+```powershell
+dotnet run --launch-profile http
+```
+
+Mở `http://localhost:5105/dev/test-agent-incident` hoặc, với profile `https`, `https://localhost:7289/dev/test-agent-incident`.
+HTTP 500 với message `NMV Agent Platform test incident` là kết quả cố tình gây lỗi; worker sẽ gửi incident ở nền.
+Endpoint không được đăng ký trong Production/Staging. Đây là báo lỗi .NET server; lỗi JavaScript trong trình duyệt không đi qua middleware này.
+
+Environment gửi sang Control Plane lấy từ `AgentPlatform:Environment`, mặc định `Production` theo cấu hình tích hợp,
+kể cả khi test trên Development. Có thể override thành `Development` để phân biệt incident test.
+AgentJob và Telegram phụ thuộc triage/AutoFixEligible trên Control Plane; triage hiện tại xếp `InvalidOperationException` vào `NeedMoreInfo`.
+Không cần POST thủ công tới `/api/incidents`.
+
+Để tắt reporting, đặt `AgentPlatform:Enabled=false` hoặc `AgentPlatform:AutoReportIncidents=false`, rồi khởi động lại app.
+Nếu Control Plane không truy cập được, kiểm tra warning của `IncidentReporter` và URL ngrok; request ứng dụng vẫn được xử lý như trước.
 
 ## 17. Triển khai production
 
@@ -649,7 +686,7 @@ dotnet ./publish/QuanLyPhongTro.dll
 
 ### Hạn chế kỹ thuật
 
-- Chưa có automated test.
+- Automated test hiện chỉ bao phủ module incident reporting; các luồng nghiệp vụ vẫn cần kiểm thử thủ công.
 - Chưa dùng ASP.NET Core Identity; xác thực và User đang tự quản lý.
 - Chưa có quên/đổi mật khẩu, xác thực email, khóa tài khoản hoặc chống brute force.
 - `IsActive` không tự đổi khi `EndDate` đã qua.
