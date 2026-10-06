@@ -73,6 +73,18 @@ namespace QuanLyPhongTro.Models.ViewModels
         [Display(Name = "Tháng ghi nhận")]
         public DateTime BillingMonth { get; set; } = new(DateTime.Today.Year, DateTime.Today.Month, 1);
 
+        [Display(Name = "Chỉ số điện cũ")]
+        [Range(typeof(decimal), "0", "999999999")]
+        public decimal PreviousElectricityMeter { get; set; }
+
+        [Display(Name = "Chỉ số điện mới")]
+        [Range(typeof(decimal), "0", "999999999")]
+        public decimal CurrentElectricityMeter { get; set; }
+
+        [Display(Name = "Đơn giá điện (đ/kWh)")]
+        [Range(typeof(decimal), "0", "9999999")]
+        public decimal ElectricityUnitPrice { get; set; }
+
         [Range(0, double.MaxValue, ErrorMessage = "Số điện không được âm")]
         [Display(Name = "Điện tiêu thụ (kWh)")]
         public decimal ElectricityUsage { get; set; }

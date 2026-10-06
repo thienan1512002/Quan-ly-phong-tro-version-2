@@ -94,6 +94,7 @@ namespace QuanLyPhongTro.Data
 
             modelBuilder.Entity<UtilityReading>(entity =>
             {
+                entity.HasOne(r => r.Contract).WithMany().HasForeignKey(r => r.ContractId).OnDelete(DeleteBehavior.Restrict);
                 entity.HasIndex(r => new { r.RoomId, r.BillingMonth }).IsUnique();
                 entity.HasOne(r => r.Room)
                       .WithMany(r => r.UtilityReadings)
