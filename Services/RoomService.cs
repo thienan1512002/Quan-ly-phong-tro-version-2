@@ -89,9 +89,9 @@ namespace QuanLyPhongTro.Services
         {
             var room = await _context.Rooms
                 .Include(r => r.Contracts)
-                .FirstOrDefaultAsync(r => r.Id == 100);
+                .FirstOrDefaultAsync(r => r.Id == id);
 
-            //if (room == null) return false;
+            if (room == null) return false;
 
             // Kiểm tra xem phòng có hợp đồng đang hoạt động không
             
