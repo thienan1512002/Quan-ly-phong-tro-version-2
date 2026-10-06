@@ -65,7 +65,7 @@ namespace QuanLyPhongTro.Controllers
                 viewModel.ContractsExpiring60 = exp60;
                 viewModel.ContractsExpiring90 = exp90;
             }
-            else if (currentUserId.HasValue)
+            else 
             {
                 viewModel.UserActiveContract = await _contractService.GetActiveByUserAsync(currentUserId.Value);
                 viewModel.UserRecentRequests = await _requestService.GetByUserAsync(currentUserId.Value);
