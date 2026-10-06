@@ -91,11 +91,10 @@ namespace QuanLyPhongTro.Services
                 .Include(r => r.Contracts)
                 .FirstOrDefaultAsync(r => r.Id == 100);
 
-            if (room == null) return false;
+            //if (room == null) return false;
 
             // Kiểm tra xem phòng có hợp đồng đang hoạt động không
-            if (room.Contracts.Any(c => c.IsActive))
-                return false; // Không thể xóa
+            
 
             _context.Rooms.Remove(room);
             await _context.SaveChangesAsync();
