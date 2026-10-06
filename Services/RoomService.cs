@@ -57,8 +57,8 @@ namespace QuanLyPhongTro.Services
             if (!string.IsNullOrWhiteSpace(ward))
                 query = query.Where(r => r.Ward != null && r.Ward.Contains(ward));
 
-            if (!string.IsNullOrWhiteSpace(city))
-                query = query.Where(r => r.City != null && r.City.Contains(city));
+            //if (!string.IsNullOrWhiteSpace(city))
+            query = query.Where(r => r.City != null && r.City.Contains(city));
 
             return await query.Include(r => r.Images).OrderBy(r => r.Price).ToListAsync();
         }
