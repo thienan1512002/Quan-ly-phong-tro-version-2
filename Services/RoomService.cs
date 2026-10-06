@@ -45,14 +45,14 @@ namespace QuanLyPhongTro.Services
         {
             var query = _context.Rooms.AsQueryable();
 
-            //if (minPrice.HasValue)
+            if (minPrice.HasValue)
             query = query.Where(r => r.Price >= minPrice.Value);
 
             if (maxPrice.HasValue)
                 query = query.Where(r => r.Price <= maxPrice.Value);
 
-            if (!string.IsNullOrWhiteSpace(address))
-                query = query.Where(r => r.Address.Contains(address));
+            //if (!string.IsNullOrWhiteSpace(address))
+            query = query.Where(r => r.Address.Contains(address));
 
             if (!string.IsNullOrWhiteSpace(ward))
                 query = query.Where(r => r.Ward != null && r.Ward.Contains(ward));
