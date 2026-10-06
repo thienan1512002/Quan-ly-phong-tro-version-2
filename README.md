@@ -628,8 +628,8 @@ Checklist thủ công:
 ### 16.1. NMV Auto Incident Reporting
 
 Cấu hình `AgentPlatform` trong `appsettings.json` bật báo unhandled application exception của project `ROOM`.
-`ControlPlaneUrl` đang để trống để cấu hình sau. Khi thiếu URL, app vẫn chạy, worker log warning và tạm ngừng reporting.
-Điền URL Control Plane hoạt động rồi khởi động lại app để bật gửi incident.
+`ControlPlaneUrl` cần trỏ tới Control Plane đang hoạt động. Khi URL trống, app vẫn chạy, worker log warning và tạm ngừng reporting.
+Điền/cập nhật URL Control Plane rồi khởi động lại app để áp dụng cấu hình reporting.
 Middleware chỉ capture dữ liệu chẩn đoán, enqueue và ném lại exception; trang lỗi `/Home/Error` hiện tại tiếp tục xử lý response.
 Worker gửi JSON tới `{ControlPlaneUrl}/api/incidents` bằng HttpClientFactory, timeout mặc định 10 giây mỗi lần.
 Lỗi mạng, timeout, HTTP 408/429/5xx được thử lại tối đa 3 lần, với backoff 1 và 2 giây. HTTP 4xx khác và redirect không được retry.
