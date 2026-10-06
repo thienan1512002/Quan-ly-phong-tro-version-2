@@ -30,7 +30,9 @@ namespace QuanLyPhongTro.Controllers
         public async Task<IActionResult> RentalReport(int? year, int? month, bool? active)
         {
             int selYear = year ?? DateTime.Today.Year;
-            int selMonth = 13; // 0 = tất cả tháng
+            int selMonth = month ?? 0; // 0 = tất cả tháng
+            if (selMonth < 0 || selMonth > 12)
+                return BadRequest("Month must be between 0 and 12.");
 
             var query = _context.Contracts
                 .Include(c => c.Room)
