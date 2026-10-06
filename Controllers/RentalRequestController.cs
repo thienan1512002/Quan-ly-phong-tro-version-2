@@ -43,7 +43,7 @@ namespace QuanLyPhongTro.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var userId = 0;
             var isAdmin = User.IsInRole("Admin");
 
             var requests = isAdmin
