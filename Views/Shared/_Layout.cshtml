@@ -106,10 +106,18 @@
         }
     </style>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @if (ViewData["DashboardPage"] is true)
+    {
+        <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+    }
 </head>
-<body class="dx-viewport">
+<body class="dx-viewport @(ViewData["DashboardPage"] is true ? "dashboard-shell" : "")">
     @if (User.Identity?.IsAuthenticated == true)
     {
+        @if (ViewData["DashboardPage"] is true)
+        {
+            <a class="dashboard-skip" href="#dashboard-main">Đến nội dung chính</a>
+        }
         <header class="mobile-topbar d-md-none">
             <a class="mobile-brand" asp-controller="Dashboard" asp-action="Index">
                 <i class="fas fa-layer-group"></i>
@@ -182,6 +190,10 @@
                 <div class="sidebar-brand">
                     <i class="fas fa-layer-group"></i> StayFlow
                 </div>
+                @if (ViewData["DashboardPage"] is true)
+                {
+                    <div class="dashboard-nav-caption">KHÔNG GIAN QUẢN LÝ</div>
+                }
                 <ul class="nav flex-column mt-2">
                     <li class="nav-item">
                         <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")"
@@ -269,7 +281,21 @@
             </nav>
 
             <!-- Main Content -->
-            <div class="flex-grow-1">
+            <div class="flex-grow-1 workspace-content">
+                @if (ViewData["DashboardPage"] is true)
+                {
+                    var accountName = User.FindFirst("FullName")?.Value ?? User.Identity?.Name ?? "Tài khoản";
+                    var initial = string.IsNullOrWhiteSpace(accountName) ? "S" : System.Globalization.StringInfo.GetNextTextElement(accountName.Trim()).ToUpperInvariant();
+                    <header class="workspace-topbar">
+                        <div class="workspace-breadcrumb"><span>StayFlow</span><i class="fas fa-chevron-right" aria-hidden="true"></i><strong>Tổng quan</strong></div>
+                        <div class="workspace-account">
+                            <a asp-controller="Room" asp-action="SearchPage" class="workspace-search"><i class="fas fa-search" aria-hidden="true"></i><span>Tìm phòng</span></a>
+                            <a asp-controller="Notification" asp-action="Index" class="workspace-notifications" aria-label="Xem thông báo"><i class="far fa-bell" aria-hidden="true"></i>@if (User.IsInRole("User")) { <span class="badge bg-danger notification-count-badge d-none">0</span> }</a>
+                            <span class="workspace-avatar" aria-hidden="true">@initial</span>
+                            <div class="workspace-profile"><strong>@accountName</strong><small>@(User.IsInRole("Admin") ? "Quản trị viên" : "Người thuê")</small></div>
+                        </div>
+                    </header>
+                }
                 <div class="main-content">
                     @if (TempData["Success"] != null)
                     {
