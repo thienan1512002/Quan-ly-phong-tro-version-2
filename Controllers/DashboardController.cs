@@ -35,7 +35,7 @@ namespace QuanLyPhongTro.Controllers
             int? currentUserId = null;
             bool isUser = User.IsInRole("User");
             if (isUser)
-                currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+                currentUserId = null;
 
             var pendingRequests = await _requestService.GetPendingCountAsync(currentUserId);
             var activeContracts = await _contractService.GetActiveCountAsync();
