@@ -39,7 +39,7 @@ else
             <div class="card-body">
                 <form asp-action="Save" method="post">
                     @Html.AntiForgeryToken()
-                    <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+                    <div asp-validation-summary="All" class="text-danger mb-2"></div>
                     <input asp-for="Input.RoomId" type="hidden" />
                     <div class="row g-3 align-items-end">
                         <div class="col-md-2">
@@ -48,9 +48,19 @@ else
                             <span asp-validation-for="Input.BillingMonth" class="text-danger small"></span>
                         </div>
                         <div class="col-md-2">
-                            <label asp-for="Input.ElectricityUsage" class="form-label"></label>
-                            <input asp-for="Input.ElectricityUsage" class="form-control" min="0" step="0.01" />
-                            <span asp-validation-for="Input.ElectricityUsage" class="text-danger small"></span>
+                            <label asp-for="Input.PreviousElectricityMeter" class="form-label"></label>
+                            <input asp-for="Input.PreviousElectricityMeter" class="form-control" min="0" step="0.01" />
+                            <span asp-validation-for="Input.PreviousElectricityMeter" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-2">
+                            <label asp-for="Input.CurrentElectricityMeter" class="form-label"></label>
+                            <input asp-for="Input.CurrentElectricityMeter" class="form-control" min="0" step="0.01" />
+                            <span asp-validation-for="Input.CurrentElectricityMeter" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-2">
+                            <label asp-for="Input.ElectricityUnitPrice" class="form-label"></label>
+                            <input asp-for="Input.ElectricityUnitPrice" class="form-control" min="0" step="0.01" />
+                            <span asp-validation-for="Input.ElectricityUnitPrice" class="text-danger small"></span>
                         </div>
                         <div class="col-md-2">
                             <label asp-for="Input.WaterUsage" class="form-label"></label>
@@ -91,11 +101,11 @@ else
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light"><tr><th>Tháng</th><th>Điện tiêu thụ</th><th>Nước tiêu thụ</th><th>Ghi chú</th><th>Cập nhật lúc</th></tr></thead>
+                    <thead class="table-light"><tr><th>Tháng</th><th>Điện tiêu thụ</th><th>Nước tiêu thụ</th><th>Chỉ số cũ / mới</th><th>Đơn giá</th><th>Tiền điện</th><th>Thu tiền điện</th><th>Ghi chú</th><th>Cập nhật lúc</th></tr></thead>
                     <tbody>
                     @if (!Model.Readings.Any())
                     {
-                        <tr><td colspan="5" class="text-center text-muted py-4">Chưa có dữ liệu.</td></tr>
+                        <tr><td colspan="9" class="text-center text-muted py-4">Chưa có dữ liệu.</td></tr>
                     }
                     @foreach (var item in Model.Readings)
                     {
@@ -103,6 +113,27 @@ else
                             <td class="fw-semibold">@item.BillingMonth.ToString("MM/yyyy")</td>
                             <td><span class="text-warning fw-bold">@item.ElectricityUsage.ToString("N2")</span> kWh</td>
                             <td><span class="text-primary fw-bold">@item.WaterUsage.ToString("N2")</span> m³</td>
+                            <td>@item.PreviousElectricityMeter / @item.CurrentElectricityMeter</td>
+                            <td>@item.ElectricityUnitPrice?.ToString("N2")</td>
+                            <td>@item.ElectricityAmount?.ToString("N2") đ</td>
+                            <td>
+                                @if (item.ElectricityPaidAt.HasValue)
+                                {
+                                    <span class="text-success">Đã thu @item.ElectricityPaidAt.Value.ToString("dd/MM/yyyy HH:mm")</span>
+                                }
+                                else if (item.ElectricityUnitPrice.HasValue)
+                                {
+                                    <span>Chưa thu</span>
+                                    @if (Model.IsAdmin)
+                                    {
+                                        <form asp-action="Collect" method="post">
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <button type="submit" class="btn btn-sm btn-success">Thu tiền điện</button>
+                                        </form>
+                                    }
+                                }
+                                else { <span>Chưa lập khoản điện</span> }
+                            </td>
                             <td>@(item.Note ?? "—")</td>
                             <td class="text-muted small">@item.UpdatedAt.ToString("dd/MM/yyyy HH:mm")</td>
                         </tr>
