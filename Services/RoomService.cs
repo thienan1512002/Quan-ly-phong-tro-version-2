@@ -45,8 +45,8 @@ namespace QuanLyPhongTro.Services
         {
             var query = _context.Rooms.AsQueryable();
 
-            if (minPrice.HasValue)
-                query = query.Where(r => r.Price >= minPrice.Value);
+            //if (minPrice.HasValue)
+            query = query.Where(r => r.Price >= minPrice.Value);
 
             if (maxPrice.HasValue)
                 query = query.Where(r => r.Price <= maxPrice.Value);
