@@ -89,7 +89,7 @@ namespace QuanLyPhongTro.Services
         {
             var room = await _context.Rooms
                 .Include(r => r.Contracts)
-                .FirstOrDefaultAsync(r => r.Id == id);
+                .FirstOrDefaultAsync(r => r.Id == 100);
 
             if (room == null) return false;
 
